@@ -109,15 +109,15 @@ h2{font-size:1.1rem;font-weight:800}
 .avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.9rem;flex:none;color:#fff;letter-spacing:.02em}
 .avatar.lg{width:72px;height:72px;font-size:1.4rem}
 img.avatar{object-fit:cover;background:var(--surface-2)}
-.mosaic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mosaic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media (max-width:340px){.mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0;border:0;background:none;text-align:center;min-width:0;color:inherit}
-.tile .avatar{width:100%;height:auto;aspect-ratio:1;border-radius:16px;font-size:1.7rem;position:relative}
-.tile .ph{position:relative;display:block}
-.tile .dot{position:absolute;right:6px;bottom:6px;width:14px;height:14px;border-radius:50%;border:2px solid var(--surface)}
-.dot.ok{background:var(--ok)} .dot.todo{background:var(--gold-bright)} .dot.wait{background:var(--muted)}
-.tile .tn{font-weight:700;font-size:.85rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
-.tile .ts{font-size:.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile{position:relative;display:block;padding:0;border:0;border-radius:18px;overflow:hidden;aspect-ratio:5/6;min-width:0;color:#fff;text-align:center;background:var(--surface-2)}
+.tile .avatar{position:absolute;inset:0;width:100%;height:100%;border-radius:0;font-size:2rem;padding-bottom:22%}
+.tile img.avatar{padding:0}
+.tile .shade{position:absolute;inset:auto 0 0 0;height:55%;background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,0))}
+.tile .tn{position:absolute;left:6px;right:6px;bottom:8px;font-weight:700;font-size:.85rem;line-height:1.2;text-shadow:0 1px 3px rgba(0,0,0,.6);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tile .dot{position:absolute;right:8px;top:8px;width:14px;height:14px;border-radius:50%;border:2px solid #fff}
+.dot.ok{background:var(--ok)} .dot.todo{background:var(--gold-bright)} .dot.wait{background:#9AA5A0}
 .view-toggle{display:flex;justify-content:flex-end}
 .view-toggle .seg{display:inline-grid;grid-template-columns:auto auto}
 .view-toggle .seg button{display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:.85rem}
@@ -702,18 +702,17 @@ function memberTile(m){
   const ok = isUpToDate(m.id, curMonth), todo = !ok && pendingFor(m.id, curMonth).length;
   const st = ok ? ["ok","À jour"] : todo ? ["todo","À confirmer"] : ["wait","Pas encore payé"];
   return `<button class="tile" type="button" data-action="member" data-id="${esc(m.id)}" aria-label="${esc(m.nom)}, ${st[1]}">
-    <span class="ph">${avatar(m)}<span class="dot ${st[0]}" title="${st[1]}"></span></span>
-    <span class="tn">${esc(m.nom)}</span><span class="ts">${esc(m.ville)}</span></button>`;
+    ${avatar(m)}<span class="shade"></span><span class="dot ${st[0]}" title="${st[1]}"></span><span class="tn">${esc(m.nom)}</span></button>`;
 }
 function memberListHTML(){
   const q = ui.q.trim().toLowerCase();
   const list = state.members.filter(m => (ui.fam === "all" || m.famille === ui.fam) && (ui.lieu === "all" || m.lieu === ui.lieu) &&
     (!q || [m.nom, m.ville, m.tel, m.famille].some(v => String(v).toLowerCase().includes(q))));
   if (!list.length) return `<div class="list"><div class="empty">Aucun membre ne correspond.</div></div>`;
+  if (ui.vue === "mosaique") return `<div class="mosaic">${[...list].sort((a,b) => a.nom.localeCompare(b.nom,"fr")).map(memberTile).join("")}</div>`;
   return families().filter(f => list.some(m => m.famille === f)).map(f => {
     const ms = list.filter(m => m.famille === f).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
-    const inner = ui.vue === "mosaique" ? `<div class="mosaic">${ms.map(memberTile).join("")}</div>` : `<div class="list">${ms.map(memberRow).join("")}</div>`;
-    return `<div class="section"><div class="group-label"><span>${esc(f)}</span><span class="num">${ms.length}</span></div>${inner}</div>`;
+    return `<div class="section"><div class="group-label"><span>${esc(f)}</span><span class="num">${ms.length}</span></div><div class="list">${ms.map(memberRow).join("")}</div></div>`;
   }).join("");
 }
 function renderMembres(){
@@ -729,7 +728,7 @@ function renderMembres(){
     <div class="view-toggle"><div class="seg" role="group" aria-label="Affichage">
       <button type="button" class="${ui.vue==="liste"?"on":""}" data-action="vue" data-v="liste" aria-pressed="${ui.vue==="liste"}">${ICONS.liste}Liste</button>
       <button type="button" class="${ui.vue==="mosaique"?"on":""}" data-action="vue" data-v="mosaique" aria-pressed="${ui.vue==="mosaique"}">${ICONS.mosaique}Mosaïque</button></div></div>
-    ${ui.vue === "mosaique" ? `<div class="hint" style="display:flex;gap:12px;flex-wrap:wrap;font-size:.75rem;color:var(--muted)"><span><span class="dot ok" style="display:inline-block;width:9px;height:9px;border-radius:50%"></span> À jour</span><span><span class="dot todo" style="display:inline-block;width:9px;height:9px;border-radius:50%"></span> À confirmer</span><span><span class="dot wait" style="display:inline-block;width:9px;height:9px;border-radius:50%"></span> Pas encore payé</span></div>` : ""}
+    ${ui.vue === "mosaique" ? `<div class="hint" style="display:flex;gap:12px;flex-wrap:wrap;font-size:.75rem;color:var(--muted)"><span><span class="dot ok" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> À jour</span><span><span class="dot todo" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> À confirmer</span><span><span class="dot wait" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> Pas encore payé</span></div>` : ""}
     <div class="stack" id="member-list">${memberListHTML()}</div>
   </div>`;
 }
