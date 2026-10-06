@@ -108,6 +108,10 @@ h2{font-size:1.1rem;font-weight:800}
 .amt.in{color:var(--ok)} .amt.out{color:var(--bad)}
 .avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.9rem;flex:none;color:#fff;letter-spacing:.02em}
 .avatar.lg{width:72px;height:72px;font-size:1.4rem}
+img.avatar{object-fit:cover;background:var(--surface-2)}
+.avatar.xl{width:120px;height:120px;font-size:2.2rem}
+.photo-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.photo-btns .btn{padding:8px 14px;min-height:0;font-size:.9rem}
 .f0{background:#0E5A4A}.f1{background:#9C5B12}.f2{background:#2F5D8A}.f3{background:#8A3B57}.f4{background:#5B6B1F}.f5{background:#6A4C93}
 .mv-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none}
 .mv-icon.in{background:var(--ok-soft);color:var(--ok)} .mv-icon.out{background:var(--bad-soft);color:var(--bad)}
@@ -265,6 +269,7 @@ const ICONS = {
   up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
   book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>',
   copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'
 };
 const CATS = {mensuelle:"Cotisation mensuelle", evenement:"Événement", don:"Don", sortie:"Sortie de caisse"};
@@ -443,6 +448,10 @@ function fbListen(){
    en ligne on écrit dans Firebase, et l'écran se met à jour tout seul. */
 const store = {
   addMember(d){ if (!ONLINE){ state.members.push({id:uid("m"), ...d}); save(); return; } fb.db.collection("members").add(d).catch(fail); },
+  setPhoto(id, photo){ const m = memberById(id); if (!m) return;
+    if (!ONLINE){ if (photo) m.photo = photo; else delete m.photo; save(); return; }
+    if (photo) m.photo = photo; else delete m.photo;
+    fb.db.doc("members/" + id).update({photo: photo || FV().delete()}).catch(fail); },
   updateMember(id, d){ if (!ONLINE){ Object.assign(memberById(id), d); save(); return; } fb.db.doc("members/" + id).update(d).catch(fail); },
   deleteMember(m){
     const strip = r => ({admins:r.admins.filter(x => x !== m.uid), tresoriers:r.tresoriers.filter(x => x !== m.uid)});
@@ -512,7 +521,29 @@ const store = {
 
 /* ---------- rendu ---------- */
 function lieuPill(m){ return `<span class="pill ${m.lieu==="comores"?"km":"dia"}">${LIEUX[m.lieu]||"Diaspora"}</span>`; }
-function avatar(m, cls){ return `<span class="avatar ${famClass(m.famille)} ${cls||""}" aria-hidden="true">${esc(initials(m.nom))}</span>`; }
+const okPhoto = v => typeof v === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
+function avatar(m, cls){
+  if (okPhoto(m.photo)) return `<img class="avatar ${cls||""}" src="${m.photo}" alt="" aria-hidden="true">`;
+  return `<span class="avatar ${famClass(m.famille)} ${cls||""}" aria-hidden="true">${esc(initials(m.nom))}</span>`;
+}
+/* La photo est réduite dans le téléphone (carré de 256 px, quelques dizaines de Ko)
+   puis rangée dans la fiche du membre : pas besoin de stockage payant. */
+function loadImage(file){
+  return new Promise((ok, ko) => { const url = URL.createObjectURL(file); const im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); ok(im); }; im.onerror = () => { URL.revokeObjectURL(url); ko(new Error("image")); }; im.src = url; });
+}
+async function shrinkPhoto(file){
+  const im = await loadImage(file);
+  const w = im.naturalWidth, h = im.naturalHeight, side = Math.min(w, h); if (!side) throw new Error("image");
+  for (const [size, q] of [[256,.8],[256,.65],[200,.6],[160,.55]]){
+    const c = document.createElement("canvas"); c.width = c.height = size;
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(im, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+    const data = c.toDataURL("image/jpeg", q);
+    if (data.length <= 60000) return data;
+  }
+  throw new Error("trop lourde");
+}
 function movementItem(p){
   const m = p.memberId ? memberById(p.memberId) : null;
   const who = m ? m.nom : (isOut(p) ? "Caisse de l'igna" : "Anonyme");
@@ -868,7 +899,7 @@ function memberSheet(id){
   const total = multi(sumBag(pays));
   let upCount = 0; for (let i = -5; i <= 0; i++) if (isUpToDate(id, shiftMonth(curMonth,i))) upCount++;
   openSheet(m.nom, `
-    <div class="profile">${avatar(m,"lg")}<span class="muted">${esc(m.famille)} · ${esc(m.ville)}</span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${lieuPill(m)}${m.role && m.role !== "Membre" ? `<span class="pill role">${esc(m.role)}</span>` : ""}${m.uid && state.roles.tresoriers.includes(m.uid) ? `<span class="pill ok">Enregistre les paiements</span>` : ""}${m.uid ? "" : `<span class="pill wait">Pas encore de compte</span>`}</span></div>
+    <div class="profile">${avatar(m,"xl")}${canEditMember(m) ? `<div class="photo-btns"><label class="btn ghost" for="photo-input">${ICONS.camera}${okPhoto(m.photo) ? "Changer la photo" : "Ajouter une photo"}</label>${okPhoto(m.photo) ? `<button class="btn ghost" type="button" data-action="remove-photo" data-id="${esc(m.id)}">Enlever</button>` : ""}<input id="photo-input" type="file" accept="image/*" data-id="${esc(m.id)}" hidden></div>` : ""}<span class="muted">${esc(m.famille)} · ${esc(m.ville)}</span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${lieuPill(m)}${m.role && m.role !== "Membre" ? `<span class="pill role">${esc(m.role)}</span>` : ""}${m.uid && state.roles.tresoriers.includes(m.uid) ? `<span class="pill ok">Enregistre les paiements</span>` : ""}${m.uid ? "" : `<span class="pill wait">Pas encore de compte</span>`}</span></div>
     <div class="phone-line"><span>${esc(m.tel)}</span><button class="icon-btn" type="button" data-action="copy" data-text="${esc(m.tel)}" aria-label="Copier le numéro">${ICONS.copy}</button></div>
     <div class="btn-row"><a class="btn ghost" href="${esc(telHref(m.tel))}">${ICONS.phone}Appeler</a><a class="btn wa" href="https://wa.me/${esc(waNumber(m.tel))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a></div>
     <div class="stats"><div class="stat"><span class="muted">Total versé</span><b class="num" style="font-size:1.1rem">${esc(total)}</b></div>
@@ -898,7 +929,9 @@ function settingsSheet(){
   const accounts = state.members.filter(m => m.uid).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
   const shareText = `Rejoins l'application de l'Igna Djongo : ${location.href.split("#")[0]}\nCrée ton compte avec ton numéro de téléphone et le code de l'igna : ${state.invite}`;
   const myRoles = [isAdmin() ? "responsable de l'application" : "", canPay() ? "trésorier (tu enregistres les paiements)" : ""].filter(Boolean).join(" et ");
+  const mine = me();
   openSheet("Réglages", `
+  ${mine ? `<div class="section"><h2>Mon profil</h2><div class="list"><button class="item" type="button" data-action="my-profile">${avatar(mine)}<span class="body"><span class="name">${esc(mine.nom)}</span><span class="sub">${okPhoto(mine.photo) ? "Voir ou changer ma photo" : "Ajouter ma photo"}</span></span></button></div></div>` : ""}
   <div class="section"><h2>Cotisation mensuelle</h2>
   ${manage ? `<form id="settings-form" class="stack" novalidate>
     <div class="two"><div class="field"><label for="set-amount">Diaspora (€)</label><input id="set-amount" name="mensuelle" type="number" inputmode="decimal" min="1" step="1" value="${state.settings.mensuelle}"></div>
@@ -951,6 +984,8 @@ const actions = {
   member(d){ memberSheet(d.id); },
   movement(d){ closeSheet(); movementSheet(d.id); },
   "add-member"(){ memberFormSheet(null); },
+  "remove-photo"(d){ store.setPhoto(d.id, null); memberSheet(d.id); render(); toast("Photo enlevée"); },
+  "my-profile"(){ const m = me(); if (m){ closeSheet(); memberSheet(m.id); } },
   "edit-member"(d){ closeSheet(); memberFormSheet(memberById(d.id)); },
   fam(d){ ui.fam = d.fam; render(); },
   lieu(d){ ui.lieu = d.v; render(); },
@@ -1009,6 +1044,13 @@ document.addEventListener("submit", e => {
     if (!r.admins.length){ err.textContent = "Il faut au moins un responsable."; err.hidden = false; return; }
     store.saveRoles(r); closeSheet(); render(); toast("Rôles enregistrés");
   }
+});
+document.addEventListener("change", async e => {
+  if (e.target.id !== "photo-input") return;
+  const file = e.target.files && e.target.files[0], id = e.target.dataset.id; if (!file) return;
+  toast("Préparation de la photo…");
+  let photo; try { photo = await shrinkPhoto(file); } catch(err){ return toast("Cette image ne marche pas. Essaie une autre photo."); }
+  store.setPhoto(id, photo); if (document.getElementById("photo-input")) memberSheet(id); render(); toast("Photo enregistrée");
 });
 document.addEventListener("input", e => {
   if (e.target.id === "search-members"){ ui.q = e.target.value; document.getElementById("member-list").innerHTML = memberListHTML(); }
