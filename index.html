@@ -120,6 +120,11 @@ img.avatar{object-fit:cover;background:var(--surface-2)}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.wait{background:var(--warn-soft);color:var(--warn)}
 .pill.km{background:var(--surface-2);color:var(--green)} .pill.dia{background:var(--gold-soft);color:var(--ink)}
 .pill.role{background:var(--gold-soft);color:var(--ink)}
+.pill.todo{background:var(--gold-soft);color:var(--ink)}
+.decl{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border-top:1px solid var(--line)}
+.decl:first-child{border-top:0}
+.decl .row{display:flex;align-items:center;gap:12px}
+.decl .btn-row .btn{padding:8px 12px;min-height:0;font-size:.9rem}
 .quick{display:flex;gap:6px;flex:none}
 .quick a{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surface-2);color:var(--green);text-decoration:none}
 .quick a.wa{color:#1C8D4E}
@@ -347,16 +352,16 @@ function seed(){
     {id:uid("h"), periode:"Années 1970", annee:1970, ordre:2, titre:"Les premiers départs vers la France", texte:"Exemple à remplacer. Qui est parti en premier, vers quelle ville, et comment le lien avec le village a été gardé.", auteur:"m5", auteurUid:"m5", ajoute:todayISO, exemple:true},
     {id:uid("h"), periode:"Aujourd'hui", annee:2026, ordre:3, titre:"L'Igna Djongo rassemblée dans une application", texte:"Exemple à remplacer. Les membres aux Comores et dans la diaspora se retrouvent dans un même outil pour se connaître et suivre la caisse.", auteur:"m2", auteurUid:"m2", ajoute:todayISO, exemple:true}
   ];
-  return {members, payments, accounts, histoire, settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:["m1"], tresoriers:["m2"]}, invite:"djongo", example:true};
+  return {members, payments, accounts, histoire, settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:["m1"], tresoriers:["m2"]}, invite:"djongo", example:true, declarations:[]};
 }
-const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false});
+const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false, declarations:[]});
 function load(){
   if (ONLINE) return emptyState();
   try { const raw = localStorage.getItem(KEY); if (raw){ const d = JSON.parse(raw); if (d && d.members && d.payments && d.roles) return d; } } catch(e){}
   return seed();
 }
 function save(){ if (ONLINE) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
-let state = load();
+let state = load(); if (!state.declarations) state.declarations = [];
 const SKEY = "igna-djongo-session";
 let sessionId = null; if (!ONLINE){ try { sessionId = localStorage.getItem(SKEY); } catch(e){} }
 const setSession = id => { sessionId = id; if (ONLINE) return; try { id ? localStorage.setItem(SKEY, id) : localStorage.removeItem(SKEY); } catch(e){} };
@@ -438,6 +443,8 @@ function fbListen(){
   const L = (ref, fn, k) => fb.unsub.push(ref.onSnapshot(snap => { fn(snap); done(k); }, onErr));
   L(fb.db.collection("members"), q => { state.members = q.docs.map(d => ({...d.data(), id:d.id})); }, "members");
   L(fb.db.collection("ledger"), q => { state.payments = q.docs.flatMap(d => d.data().items || []); }, "ledger");
+  // à part : si les règles ne sont pas encore à jour, l'application continue de marcher sans cette liste
+  fb.unsub.push(fb.db.collection("declarations").onSnapshot(q => { state.declarations = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.declarations = []; }));
   L(fb.db.collection("histoire"), q => { state.histoire = q.docs.map(d => ({...d.data(), id:d.id})); }, "histoire");
   L(fb.db.doc("config/roles"), d => { const r = d.data() || {}; state.roles = {admins:r.admins || [], tresoriers:r.tresoriers || []}; }, "roles");
   L(fb.db.doc("config/settings"), d => { if (d.exists) state.settings = {mensuelle:20, mensuelleKMF:5000, ...d.data()}; }, "settings");
@@ -448,6 +455,12 @@ function fbListen(){
    en ligne on écrit dans Firebase, et l'écran se met à jour tout seul. */
 const store = {
   addMember(d){ if (!ONLINE){ state.members.push({id:uid("m"), ...d}); save(); return; } fb.db.collection("members").add(d).catch(fail); },
+  declare(d){ if (!ONLINE){ state.declarations.push({id:uid("d"), ...d}); save(); return; } fb.db.collection("declarations").add(d).catch(fail); },
+  dropDecl(id){ if (!ONLINE){ state.declarations = state.declarations.filter(x => x.id !== id); save(); return; } fb.db.doc("declarations/" + id).delete().catch(fail); },
+  confirmDecl(dc){
+    const p = {id:uid("p"), memberId:dc.memberId, montant:dc.montant, devise:dc.devise, date:dc.date, cat:dc.cat, motif:dc.note || CATS[dc.cat], moyen:dc.moyen, par:myUid(), declarePar:dc.uid};
+    if (!ONLINE){ state.payments.push(p); state.declarations = state.declarations.filter(x => x.id !== dc.id); save(); return; }
+    const b = fb.db.batch(); b.set(fb.db.doc("ledger/" + p.date.slice(0,7)), {items: FV().arrayUnion(p)}, {merge:true}); b.delete(fb.db.doc("declarations/" + dc.id)); b.commit().catch(fail); },
   setPhoto(id, photo){ const m = memberById(id); if (!m) return;
     if (!ONLINE){ if (photo) m.photo = photo; else delete m.photo; save(); return; }
     if (photo) m.photo = photo; else delete m.photo;
@@ -544,6 +557,50 @@ async function shrinkPhoto(file){
   }
   throw new Error("trop lourde");
 }
+const MOYENS = ["Virement bancaire", "Espèces remises en main propre", "Mobile money (Mvola, Huri…)", "Autre"];
+const pendingFor = (memberId, mk) => state.declarations.filter(d => d.memberId === memberId && (!mk || d.date.startsWith(mk)));
+const canDeclare = () => !!me() && !canPay();
+function declItem(dc){
+  const m = memberById(dc.memberId); const mine = dc.uid && dc.uid === myUid();
+  return `<div class="decl"><div class="row">${m ? avatar(m) : ""}<span class="body" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+      <span class="name" style="font-weight:700">${esc(m ? m.nom : "Membre retiré")}</span>
+      <span class="muted" style="font-size:.85rem">${esc(CATS[dc.cat] || "")} · ${esc(dateLabel(dc.date))} · ${esc(dc.moyen || "")}${dc.note ? " · " + esc(dc.note) : ""}</span></span>
+      <span class="amt num" style="font-weight:700;white-space:nowrap">${esc(money(dc.montant, dc.devise))}</span></div>
+    ${canPay() ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="decl-no" data-id="${esc(dc.id)}">Refuser</button><button class="btn primary" type="button" data-action="decl-ok" data-id="${esc(dc.id)}">Confirmer</button></div>`
+      : mine ? `<div class="btn-row"><span class="muted" style="font-size:.85rem;align-self:center">En attente du trésorier</span><button class="btn ghost" type="button" data-action="decl-no" data-id="${esc(dc.id)}">Annuler</button></div>` : ""}</div>`;
+}
+function declSection(){
+  const list = [...state.declarations].filter(d => canPay() || d.uid === myUid()).sort((a,b) => a.date.localeCompare(b.date));
+  if (!list.length) return "";
+  return `<div class="section"><div class="group-label"><span>${canPay() ? "Paiements à confirmer" : "Mes paiements à confirmer"}</span><span class="num">${list.length}</span></div><div class="list">${list.map(declItem).join("")}</div></div>`;
+}
+function declareSheet(){
+  const m = me(); if (!m) return;
+  openSheet("J'ai cotisé", `
+  <form id="declare-form" class="stack" novalidate>
+    <div class="notice">${ICONS.info}<span>Paie comme d'habitude, puis note-le ici. Le trésorier le confirmera et tu passeras « À jour ».</span></div>
+    <div class="field"><label for="dc-cat">Pour quoi ?</label><select id="dc-cat" name="cat">
+      <option value="mensuelle">${CATS.mensuelle}</option><option value="evenement">Événement (mariage, décès…)</option><option value="don">${CATS.don}</option></select></div>
+    <div class="two"><div class="field"><label for="dc-amount">Montant</label><input id="dc-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${expectedOf(m)}" required></div>
+      <div class="field"><label for="dc-devise">Monnaie</label><select id="dc-devise" name="devise"><option value="EUR" ${devOfMember(m)==="EUR"?"selected":""}>Euros (€)</option><option value="KMF" ${devOfMember(m)==="KMF"?"selected":""}>Francs comoriens (FC)</option></select></div></div>
+    <div class="field"><label for="dc-moyen">Comment as-tu payé ?</label><select id="dc-moyen" name="moyen">${MOYENS.map(x => `<option>${esc(x)}</option>`).join("")}</select></div>
+    <div class="field"><label for="dc-date">Date du paiement</label><input id="dc-date" name="date" type="date" value="${todayISO}" max="${todayISO}" required></div>
+    <div class="field"><label for="dc-note">Précision (facultatif)</label><input id="dc-note" name="note" type="text" maxlength="200" placeholder="Ex. : remis à Said, ou cotisation de septembre"></div>
+    <p class="field hint" id="dc-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">Envoyer au trésorier</button>
+  </form>`);
+}
+function submitDeclare(form){
+  const f = new FormData(form), m = me(); if (!m) return;
+  const montant = parseFloat(String(f.get("montant")).replace(",", ".")), date = String(f.get("date") || "");
+  const err = form.querySelector("#dc-error"); const bad = t => { err.textContent = t; err.hidden = false; };
+  if (!(montant > 0) || montant > 10000000) return bad("Indique un montant supérieur à 0.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bad("Choisis la date du paiement.");
+  const cat = ["mensuelle","evenement","don"].includes(String(f.get("cat"))) ? String(f.get("cat")) : "mensuelle";
+  const moyen = MOYENS.includes(String(f.get("moyen"))) ? String(f.get("moyen")) : "Autre";
+  store.declare({memberId:m.id, uid:myUid(), montant, devise: f.get("devise") === "KMF" ? "KMF" : "EUR", date, cat, moyen, note:String(f.get("note") || "").trim().slice(0,200), at:todayISO});
+  closeSheet(); render(); toast("Merci ! Le trésorier va confirmer ton paiement.");
+}
 function movementItem(p){
   const m = p.memberId ? memberById(p.memberId) : null;
   const who = m ? m.nom : (isOut(p) ? "Caisse de l'igna" : "Anonyme");
@@ -581,6 +638,8 @@ function renderAccueil(){
   return `<div class="topbar"><div class="titles"><span class="eyebrow">Bonjour ${esc((me() || {nom:""}).nom.split(" ")[0])}</span><h1>La caisse</h1></div>
     <button class="icon-btn" type="button" data-action="settings" aria-label="Réglages">${ICONS.gear}</button></div>
   <div class="stack">
+    ${canPay() && state.declarations.length ? `<button class="notice" type="button" data-action="goto-decl" style="border:0;text-align:left;color:var(--ink);background:var(--gold-soft)">${ICONS.info}<span><b>${state.declarations.length} paiement${state.declarations.length > 1 ? "s" : ""} à confirmer.</b> Touche ici pour les voir.</span></button>` : ""}
+    ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
     <section class="hero" aria-label="Total de la caisse">
       <span class="label">Total en caisse</span>
       <div class="cash num"><div><span class="cur">Caisse en euros</span><b>${esc(money(t.cash.EUR, "EUR"))}</b></div><div><span class="cur">Caisse en francs comoriens</span><b>${esc(money(t.cash.KMF, "KMF"))}</b></div></div>
@@ -617,7 +676,7 @@ function memberRow(m){
   return `<div class="item" role="button" tabindex="0" data-action="member" data-id="${esc(m.id)}">
     ${avatar(m)}
     <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.ville)}${role}</span>
-      <span style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill ${ok?"ok":"wait"}">${ok?"À jour":"En attente"}</span>${lieuPill(m)}</span></span>
+      <span style="display:flex;gap:6px;flex-wrap:wrap">${ok ? `<span class="pill ok">À jour</span>` : pendingFor(m.id, curMonth).length ? `<span class="pill todo">À confirmer</span>` : `<span class="pill wait">Pas encore payé</span>`}${lieuPill(m)}</span></span>
     <span class="quick">
       <a href="${esc(telHref(m.tel))}" data-action="noop" aria-label="Appeler ${esc(m.nom)}">${ICONS.phone}</a>
       <a class="wa" href="https://wa.me/${esc(waNumber(m.tel))}" target="_blank" rel="noopener" data-action="noop" aria-label="WhatsApp ${esc(m.nom)}">${ICONS.wa}</a>
@@ -658,7 +717,7 @@ function renderCotisations(){
     body = `<div class="list">${ms.map(m => { const paid = paidMonth(m.id, mk); const up = isUpToDate(m.id, mk); const dv = devOfMember(m);
       return `<button class="item" type="button" data-action="${up || !canPay() ? "member" : "pay"}" data-id="${esc(m.id)}" data-member="${esc(m.id)}">${avatar(m)}
         <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.famille)} · ${LIEUX[m.lieu]||"Diaspora"}</span></span>
-        ${up ? `<span class="pill ok num">Payé ${esc(money(paid, dv))}</span>` : `<span class="pill wait">${paid ? "Partiel " + esc(money(paid, dv)) : "À payer " + esc(money(expectedOf(m), dv))}</span>`}</button>`; }).join("")}</div>`;
+        ${up ? `<span class="pill ok num">Payé ${esc(money(paid, dv))}</span>` : pendingFor(m.id, mk).length ? `<span class="pill todo">À confirmer</span>` : `<span class="pill wait">${paid ? "Partiel " + esc(money(paid, dv)) : "À payer " + esc(money(expectedOf(m), dv))}</span>`}</button>`; }).join("")}</div>`;
   } else {
     body = `<div class="list">${monthPays.map(movementItem).join("") || `<div class="empty">Aucun mouvement en ${esc(monthLabel(mk).toLowerCase())}.</div>`}</div>`;
   }
@@ -673,7 +732,8 @@ function renderCotisations(){
     </div>
     <div class="seg" role="tablist"><button type="button" role="tab" class="${ui.cotView==="membres"?"on":""}" data-action="cotview" data-v="membres">Qui a payé</button>
       <button type="button" role="tab" class="${ui.cotView==="mouvements"?"on":""}" data-action="cotview" data-v="mouvements">Mouvements</button></div>
-    ${canPay() ? "" : `<div class="notice">${ICONS.info}<span>Seul le trésorier peut enregistrer les paiements. Si tu as payé, préviens-le.</span></div>`}
+    ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
+    ${declSection()}
     ${body}
   </div>`;
 }
@@ -904,6 +964,7 @@ function memberSheet(id){
     <div class="btn-row"><a class="btn ghost" href="${esc(telHref(m.tel))}">${ICONS.phone}Appeler</a><a class="btn wa" href="https://wa.me/${esc(waNumber(m.tel))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a></div>
     <div class="stats"><div class="stat"><span class="muted">Total versé</span><b class="num" style="font-size:1.1rem">${esc(total)}</b></div>
       <div class="stat"><span class="muted">Mois à jour</span><b class="num">${upCount} sur 6</b></div></div>
+    ${canDeclare() && m.uid === myUid() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
     ${canPay() ? `<button class="btn primary" type="button" data-action="pay" data-member="${esc(m.id)}">${ICONS.plus}Enregistrer un paiement</button>` : ""}
     <div class="section"><h2>Ses paiements</h2><div class="list">${pays.map(movementItem).join("") || `<div class="empty">Aucun paiement enregistré.</div>`}</div></div>
     ${canEditMember(m) || (isAdmin() && m.uid !== myUid()) ? `<div class="btn-row">${canEditMember(m) ? `<button class="btn ghost" type="button" data-action="edit-member" data-id="${esc(m.id)}">Modifier</button>` : ""}${isAdmin() && m.uid !== myUid() ? `<button class="btn danger" type="button" data-action="ask-delete">Retirer</button>` : ""}</div>` : ""}
@@ -984,6 +1045,10 @@ const actions = {
   member(d){ memberSheet(d.id); },
   movement(d){ closeSheet(); movementSheet(d.id); },
   "add-member"(){ memberFormSheet(null); },
+  declare(){ closeSheet(); declareSheet(); },
+  "goto-decl"(){ ui.tab = "cotisations"; ui.cotView = "membres"; render(); scrollTo(0,0); },
+  "decl-ok"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc || !canPay()) return; store.confirmDecl(dc); render(); const m = memberById(dc.memberId); toast(`Paiement${m ? " de " + m.nom.split(" ")[0] : ""} confirmé`); },
+  "decl-no"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc) return; if (!confirm(canPay() ? "Refuser ce paiement ? Il sera retiré de la liste." : "Annuler ce paiement déclaré ?")) return; store.dropDecl(dc.id); render(); toast(canPay() ? "Paiement refusé" : "Déclaration annulée"); },
   "remove-photo"(d){ store.setPhoto(d.id, null); memberSheet(d.id); render(); toast("Photo enlevée"); },
   "my-profile"(){ const m = me(); if (m){ closeSheet(); memberSheet(m.id); } },
   "edit-member"(d){ closeSheet(); memberFormSheet(memberById(d.id)); },
@@ -1025,6 +1090,7 @@ document.addEventListener("submit", e => {
   e.preventDefault();
   if (e.target.id === "pay-form") submitPay(e.target);
   else if (e.target.id === "member-form") submitMember(e.target);
+  else if (e.target.id === "declare-form") submitDeclare(e.target);
   else if (e.target.id === "chapter-form") submitChapter(e.target);
   else if (e.target.id === "login-form") submitLogin(e.target);
   else if (e.target.id === "signup-form") submitSignup(e.target);
