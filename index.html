@@ -109,6 +109,19 @@ h2{font-size:1.1rem;font-weight:800}
 .avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.9rem;flex:none;color:#fff;letter-spacing:.02em}
 .avatar.lg{width:72px;height:72px;font-size:1.4rem}
 img.avatar{object-fit:cover;background:var(--surface-2)}
+.mosaic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:340px){.mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0;border:0;background:none;text-align:center;min-width:0;color:inherit}
+.tile .avatar{width:100%;height:auto;aspect-ratio:1;border-radius:16px;font-size:1.7rem;position:relative}
+.tile .ph{position:relative;display:block}
+.tile .dot{position:absolute;right:6px;bottom:6px;width:14px;height:14px;border-radius:50%;border:2px solid var(--surface)}
+.dot.ok{background:var(--ok)} .dot.todo{background:var(--gold-bright)} .dot.wait{background:var(--muted)}
+.tile .tn{font-weight:700;font-size:.85rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tile .ts{font-size:.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.view-toggle{display:flex;justify-content:flex-end}
+.view-toggle .seg{display:inline-grid;grid-template-columns:auto auto}
+.view-toggle .seg button{display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:.85rem}
+.view-toggle svg{width:16px;height:16px}
 .avatar.xl{width:120px;height:120px;font-size:2.2rem}
 .photo-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .photo-btns .btn{padding:8px 14px;min-height:0;font-size:.9rem}
@@ -274,6 +287,8 @@ const ICONS = {
   up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
   book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>',
+  liste:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>',
+  mosaique:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>',
   camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>',
   copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'
 };
@@ -374,7 +389,8 @@ const canEditMember = m => isAdmin() || canPay() || (m && m.uid && m.uid === myU
 const canDeleteChapter = c => isAdmin() || (c && c.auteurUid && c.auteurUid === myUid());
 const samePhone = (a, b) => waNumber(a) === waNumber(b) && waNumber(a).length >= 6;
 let authMode = "login";
-const ui = {tab:"accueil", month:curMonth, cotView:"membres", q:"", fam:"all", lieu:"all"};
+const ui = {tab:"accueil", month:curMonth, cotView:"membres", q:"", fam:"all", lieu:"all", vue:"liste"};
+try { if (localStorage.getItem("igna-djongo-vue") === "mosaique") ui.vue = "mosaique"; } catch(e){}
 
 /* ---------- calculs ---------- */
 const memberById = id => state.members.find(m => m.id === id);
@@ -682,6 +698,13 @@ function memberRow(m){
       <a class="wa" href="https://wa.me/${esc(waNumber(m.tel))}" target="_blank" rel="noopener" data-action="noop" aria-label="WhatsApp ${esc(m.nom)}">${ICONS.wa}</a>
     </span></div>`;
 }
+function memberTile(m){
+  const ok = isUpToDate(m.id, curMonth), todo = !ok && pendingFor(m.id, curMonth).length;
+  const st = ok ? ["ok","À jour"] : todo ? ["todo","À confirmer"] : ["wait","Pas encore payé"];
+  return `<button class="tile" type="button" data-action="member" data-id="${esc(m.id)}" aria-label="${esc(m.nom)}, ${st[1]}">
+    <span class="ph">${avatar(m)}<span class="dot ${st[0]}" title="${st[1]}"></span></span>
+    <span class="tn">${esc(m.nom)}</span><span class="ts">${esc(m.ville)}</span></button>`;
+}
 function memberListHTML(){
   const q = ui.q.trim().toLowerCase();
   const list = state.members.filter(m => (ui.fam === "all" || m.famille === ui.fam) && (ui.lieu === "all" || m.lieu === ui.lieu) &&
@@ -689,7 +712,8 @@ function memberListHTML(){
   if (!list.length) return `<div class="list"><div class="empty">Aucun membre ne correspond.</div></div>`;
   return families().filter(f => list.some(m => m.famille === f)).map(f => {
     const ms = list.filter(m => m.famille === f).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
-    return `<div class="section"><div class="group-label"><span>${esc(f)}</span><span class="num">${ms.length}</span></div><div class="list">${ms.map(memberRow).join("")}</div></div>`;
+    const inner = ui.vue === "mosaique" ? `<div class="mosaic">${ms.map(memberTile).join("")}</div>` : `<div class="list">${ms.map(memberRow).join("")}</div>`;
+    return `<div class="section"><div class="group-label"><span>${esc(f)}</span><span class="num">${ms.length}</span></div>${inner}</div>`;
   }).join("");
 }
 function renderMembres(){
@@ -702,6 +726,10 @@ function renderMembres(){
       <button class="chip ${ui.fam==="all"?"on":""}" type="button" data-action="fam" data-fam="all">Toutes</button>
       ${fams.map(f => `<button class="chip ${ui.fam===f?"on":""}" type="button" data-action="fam" data-fam="${esc(f)}">${esc(f.replace(/^Famille /,""))}</button>`).join("")}
     </div>
+    <div class="view-toggle"><div class="seg" role="group" aria-label="Affichage">
+      <button type="button" class="${ui.vue==="liste"?"on":""}" data-action="vue" data-v="liste" aria-pressed="${ui.vue==="liste"}">${ICONS.liste}Liste</button>
+      <button type="button" class="${ui.vue==="mosaique"?"on":""}" data-action="vue" data-v="mosaique" aria-pressed="${ui.vue==="mosaique"}">${ICONS.mosaique}Mosaïque</button></div></div>
+    ${ui.vue === "mosaique" ? `<div class="hint" style="display:flex;gap:12px;flex-wrap:wrap;font-size:.75rem;color:var(--muted)"><span><span class="dot ok" style="display:inline-block;width:9px;height:9px;border-radius:50%"></span> À jour</span><span><span class="dot todo" style="display:inline-block;width:9px;height:9px;border-radius:50%"></span> À confirmer</span><span><span class="dot wait" style="display:inline-block;width:9px;height:9px;border-radius:50%"></span> Pas encore payé</span></div>` : ""}
     <div class="stack" id="member-list">${memberListHTML()}</div>
   </div>`;
 }
@@ -1054,6 +1082,7 @@ const actions = {
   "edit-member"(d){ closeSheet(); memberFormSheet(memberById(d.id)); },
   fam(d){ ui.fam = d.fam; render(); },
   lieu(d){ ui.lieu = d.v; render(); },
+  vue(d){ ui.vue = d.v === "mosaique" ? "mosaique" : "liste"; try { localStorage.setItem("igna-djongo-vue", ui.vue); } catch(e){} render(); },
   month(d){ const n = shiftMonth(ui.month, Number(d.d)); if (n <= curMonth){ ui.month = n; render(); } },
   cotview(d){ ui.cotView = d.v; render(); },
   "ask-delete"(){ const c = document.getElementById("confirm-del"); if (c){ c.hidden = false; c.scrollIntoView({block:"nearest"}); } },
