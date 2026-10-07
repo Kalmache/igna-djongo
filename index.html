@@ -485,7 +485,7 @@ const store = {
     const strip = r => ({admins:r.admins.filter(x => x !== m.uid), tresoriers:r.tresoriers.filter(x => x !== m.uid)});
     if (!ONLINE){ state.members = state.members.filter(x => x.id !== m.id); state.accounts = state.accounts.filter(a => a.memberId !== m.id); if (m.uid) state.roles = strip(state.roles); save(); return; }
     const b = fb.db.batch(); b.delete(fb.db.doc("members/" + m.id));
-    if (m.uid){ b.delete(fb.db.doc("access/" + m.uid)); if (state.roles.admins.includes(m.uid) || state.roles.tresoriers.includes(m.uid)) b.update(fb.db.doc("config/roles"), strip(state.roles)); }
+    if (m.uid){ b.delete(fb.db.doc("access/" + m.uid)); b.set(fb.db.doc("bannis/" + m.uid), {at:todayISO}); if (state.roles.admins.includes(m.uid) || state.roles.tresoriers.includes(m.uid)) b.update(fb.db.doc("config/roles"), strip(state.roles)); }
     b.commit().catch(fail);
   },
   addPayment(p){ if (!ONLINE){ state.payments.push(p); save(); return; }
@@ -850,7 +850,7 @@ function chapterSheet(id){
     <div class="stack" style="gap:10px"><h2 style="font-size:1.4rem">${esc(c.titre)}</h2>
       <span class="muted" style="font-size:.85rem">${c.exemple ? `<span class="pill ex">Exemple</span> ` : ""}${a ? "Écrit par " + esc(a.nom) + " · " : ""}ajouté le ${esc(dateLabel(c.ajoute))} ${esc(c.ajoute.slice(0,4))}</span>
       <div class="story">${esc(c.texte)}</div></div>
-    <div class="btn-row"><button class="btn ghost" type="button" data-action="edit-chapter" data-id="${esc(c.id)}">Modifier</button>${canDeleteChapter(c) ? `<button class="btn danger" type="button" data-action="ask-delete">Supprimer</button>` : ""}</div>
+    ${canDeleteChapter(c) ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-chapter" data-id="${esc(c.id)}">Modifier</button><button class="btn danger" type="button" data-action="ask-delete">Supprimer</button></div>` : ""}
     <div class="confirm" id="confirm-del" hidden><span>Supprimer ce chapitre de l'histoire ?</span>
       <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-chapter" data-id="${esc(c.id)}">Oui, supprimer</button></div></div>`);
 }
@@ -962,7 +962,7 @@ function memberFormSheet(m){
     <div class="field"><label for="mf-tel">Téléphone</label><input id="mf-tel" name="tel" type="tel" inputmode="tel" value="${m ? esc(m.tel) : ""}" placeholder="+33 6… ou +269…" required></div>
     <div class="field"><label for="mf-lieu">Où vit cette personne ?</label><select id="mf-lieu" name="lieu"><option value="comores" ${m && m.lieu==="comores"?"selected":""}>Aux Comores</option><option value="diaspora" ${m && m.lieu==="diaspora"?"selected":""}>Dans la diaspora (France, ailleurs)</option></select></div>
     <div class="two"><div class="field"><label for="mf-ville">Ville</label><input id="mf-ville" name="ville" type="text" value="${m ? esc(m.ville) : ""}" required></div>
-      <div class="field"><label for="mf-role">Rôle</label><select id="mf-role" name="role">${ROLES.map(r => `<option ${m && m.role===r?"selected":""}>${r}</option>`).join("")}</select></div></div>
+      <div class="field"><label for="mf-role">Rôle</label><select id="mf-role" name="role" ${isAdmin() || canPay() ? "" : "disabled"}>${ROLES.map(r => `<option ${m && m.role===r?"selected":""}>${r}</option>`).join("")}</select></div></div>
     <p class="field hint" id="mf-error" hidden style="color:var(--bad)"></p>
     <button class="btn primary" type="submit">${m ? "Enregistrer les changements" : "Ajouter à l'igna"}</button>
   </form>`);
@@ -975,6 +975,7 @@ function submitMember(form){
   if (!/^famille\s/i.test(data.famille)) data.famille = "Famille " + data.famille;
   data.telKey = waNumber(data.tel);
   const id = form.dataset.id;
+  if (id && !(isAdmin() || canPay())) data.role = (memberById(id) || {}).role || "Membre";
   if (id){ store.updateMember(id, data); toast("Changements enregistrés"); }
   else { store.addMember(data); toast(`${data.nom} ajouté(e) à l'igna`); }
   closeSheet(); render();

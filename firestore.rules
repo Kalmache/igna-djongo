@@ -13,6 +13,10 @@ service cloud.firestore {
     function isAdmin() { return hasAccess() && !noRolesYet() && me() in roles().admins; }
     function isTreasurer() { return hasAccess() && !noRolesYet() && me() in roles().tresoriers; }
     function str(v, max) { return v is string && v.size() <= max; }
+    // Le compte est créé avec « numéro@igna-djongo.app » : on peut donc vérifier
+    // qu'une fiche porte bien le même numéro que le compte.
+    function myTel() { return request.auth.token.email; }
+    function isBanned() { return exists(/databases/$(database)/documents/bannis/$(me())); }
 
     // Un document par compte autorisé. On le crée avec le bon code de l'igna
     // (ou sans code pour le tout premier compte, qui devient responsable).
@@ -22,12 +26,22 @@ service cloud.firestore {
       allow create: if signedIn() && userId == me()
         && request.resource.data.keys().hasOnly(['code', 'at'])
         && str(request.resource.data.code, 30)
+        && !isBanned()
         && (noRolesYet() || exists(/databases/$(database)/documents/invites/$(request.resource.data.code)));
-      allow delete: if isAdmin();
+      // un responsable ne peut pas se retirer lui-même l'accès
+      allow delete: if isAdmin() && userId != me();
       allow update: if false;
     }
 
     // Les codes valides. On peut vérifier un code précis, jamais lister.
+    // Comptes retirés par un responsable : ils ne peuvent plus revenir, même avec le code.
+    match /bannis/{userId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && userId != me() && request.resource.data.keys().hasOnly(['at']);
+      allow delete: if isAdmin();
+      allow update: if false;
+    }
+
     match /invites/{code} {
       allow get: if signedIn();
       allow list: if false;
@@ -59,19 +73,29 @@ service cloud.firestore {
 
     function validMember() {
       let d = request.resource.data;
-      return str(d.nom, 120) && d.nom.size() > 0 && str(d.famille, 120) && str(d.tel, 40)
-        && str(d.ville, 120) && d.lieu in ['comores', 'diaspora'];
+      return d.keys().hasOnly(['nom', 'famille', 'tel', 'telKey', 'ville', 'lieu', 'role', 'uid', 'photo'])
+        && str(d.nom, 120) && d.nom.size() > 0 && str(d.famille, 120) && str(d.tel, 40)
+        && str(d.ville, 120) && d.lieu in ['comores', 'diaspora']
+        && str(d.get('telKey', ''), 30) && str(d.get('role', ''), 60)
+        && str(d.get('photo', ''), 100000);
     }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
     match /members/{id} {
       allow read: if hasAccess();
+      // une fiche liée à un compte doit porter le numéro de ce compte
       allow create: if hasAccess() && validMember()
-        && (!('uid' in request.resource.data) || request.resource.data.uid == me());
+        && (!('uid' in request.resource.data)
+            || (request.resource.data.uid == me() && myTel() == request.resource.data.telKey + '@igna-djongo.app'));
       allow update: if hasAccess() && validMember() && (
-        // un responsable, un trésorier, ou la personne elle-même, sans toucher au lien avec le compte
-        ((isAdmin() || isTreasurer() || resource.data.get('uid', null) == me())
-          && request.resource.data.get('uid', null) == resource.data.get('uid', null))
-        // ou quelqu'un qui crée son compte et retrouve sa fiche (même numéro)
-        || (resource.data.get('uid', null) == null && request.resource.data.uid == me())
+        // un responsable ou un trésorier, sans toucher au lien avec le compte
+        ((isAdmin() || isTreasurer()) && !changed().hasAny(['uid']))
+        // la personne elle-même : ses informations et sa photo, pas son rôle ni le lien
+        || (resource.data.get('uid', null) == me()
+            && changed().hasOnly(['nom', 'famille', 'tel', 'telKey', 'ville', 'lieu', 'photo']))
+        // quelqu'un qui crée son compte et retrouve sa fiche : seulement si c'est son numéro
+        || (resource.data.get('uid', null) == null && request.resource.data.uid == me()
+            && myTel() == resource.data.telKey + '@igna-djongo.app'
+            && changed().hasOnly(['uid']))
       );
       allow delete: if isAdmin();
     }
@@ -101,12 +125,17 @@ service cloud.firestore {
         && str(d.moyen, 60) && str(d.note, 200) && str(d.at, 10);
     }
 
+    function validChapter() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['titre', 'texte', 'periode', 'annee', 'ordre', 'auteur', 'auteurUid', 'ajoute', 'exemple'])
+        && str(d.titre, 200) && str(d.texte, 20000) && str(d.get('periode', ''), 60);
+    }
     match /histoire/{id} {
       allow read: if hasAccess();
-      allow create: if hasAccess() && request.resource.data.auteurUid == me()
-        && str(request.resource.data.titre, 200) && str(request.resource.data.texte, 20000);
-      allow update: if hasAccess() && request.resource.data.auteurUid == resource.data.auteurUid
-        && str(request.resource.data.titre, 200) && str(request.resource.data.texte, 20000);
+      allow create: if hasAccess() && request.resource.data.auteurUid == me() && validChapter();
+      // seuls l'auteur du chapitre et les responsables peuvent le modifier
+      allow update: if hasAccess() && (resource.data.auteurUid == me() || isAdmin())
+        && !changed().hasAny(['auteurUid', 'auteur', 'ajoute', 'ordre']) && validChapter();
       allow delete: if hasAccess() && (resource.data.auteurUid == me() || isAdmin());
     }
   }
