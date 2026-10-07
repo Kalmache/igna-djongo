@@ -33,7 +33,6 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // Les codes valides. On peut vérifier un code précis, jamais lister.
     // Comptes retirés par un responsable : ils ne peuvent plus revenir, même avec le code.
     match /bannis/{userId} {
       allow read: if isAdmin();
@@ -42,6 +41,7 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Les codes valides. On peut vérifier un code précis, jamais lister.
     match /invites/{code} {
       allow get: if signedIn();
       allow list: if false;
