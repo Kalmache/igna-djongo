@@ -237,9 +237,12 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 .annonce h3{margin:0;font-size:1rem} .annonce .excerpt{color:var(--muted);font-size:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .annonce .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--muted)}
 .pill.new{background:var(--green);color:#fff}
-.seg button .count{display:inline-block;min-width:20px;padding:1px 6px;margin-left:4px;border-radius:99px;background:var(--surface);font-size:.75rem;color:var(--muted)}
-.seg button .count.new{background:var(--green);color:#fff}
-.block-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.tile2{text-align:left;color:inherit;font:inherit;gap:6px!important;min-height:132px}
+.tile2 .eyebrow{display:flex;align-items:center;gap:6px} .tile2 .eyebrow .pill{font-size:.7rem;padding:1px 7px}
+.tile2 .t{font-size:.95rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile2 .s{font-size:.8rem} .tile2 .go{margin-top:auto;font-size:.8rem;font-weight:700;color:var(--green)}
+:root[data-theme="dark"] .tile2 .go{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tile2 .go{color:var(--gold)}}
 .bilan-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)} .bilan-row:last-child{border-bottom:0}
 .bilan-row b{text-align:right}
 .field textarea.short{min-height:110px}
@@ -856,26 +859,30 @@ function collecteCard(c){
     <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
     <span class="row-between num"><span><b>${esc(money(Math.round(collecteTotal(c)), c.devise))}</b> sur ${esc(money(c.objectif, c.devise))}</span><span class="muted">${pct} % · ${n} participant${n > 1 ? "s" : ""}</span></span></button>`;
 }
-/* Accueil : annonces et collectes dans un même bloc à deux onglets, pour garder la page courte */
-const homeTab = () => { if (!ui.homeTab){ try { ui.homeTab = localStorage.getItem("igna-djongo-accueil-bloc"); } catch(e){} } return ui.homeTab === "collectes" ? "collectes" : "annonces"; };
+/* Accueil : deux cases côte à côte, Annonces à gauche et Collectes à droite ; chacune ouvre sa propre fenêtre */
 function annoncesCollectesSection(){
-  const t = homeTab(), seen = annSeen();
-  const ann = annoncesAccueil().slice(0, 2), col = collectesOuvertes().slice(0, 2);
-  const nNew = annoncesAccueil().filter(a => (a.ts||0) > seen && a.auteurUid !== myUid()).length;
-  const nCol = collectesOuvertes().length;
-  const tab = (k, label, count, isNew) => `<button type="button" role="tab" class="${t===k?"on":""}" aria-selected="${t===k}" data-action="home-tab" data-v="${k}">${label}${count ? ` <span class="count ${isNew ? "new" : ""}">${count}</span>` : ""}</button>`;
-  const body = t === "annonces"
-    ? `${ann.length ? `<div class="stack" style="gap:8px">${ann.map(a => annonceCard(a, seen)).join("")}</div>` : `<div class="card empty">Aucune annonce pour l'instant.</div>`}
-      <div class="block-foot"><button class="link" type="button" data-action="add-annonce">+ Publier une annonce</button>${state.annonces.length ? `<button class="link" type="button" data-action="annonces">Tout voir</button>` : ""}</div>`
-    : `${col.length ? `<div class="stack" style="gap:8px">${col.map(collecteCard).join("")}</div>` : `<div class="card empty">Aucune collecte en cours.</div>`}
-      <div class="block-foot">${canManageCollecte() ? `<button class="link" type="button" data-action="add-collecte">+ Nouvelle collecte</button>` : "<span></span>"}${nCol > 2 || state.collectes.some(c => !c.ouverte) ? `<button class="link" type="button" data-action="collectes">Tout voir</button>` : ""}</div>`;
-  return `<section class="section"><div class="seg" role="tablist" aria-label="Annonces et collectes">${tab("annonces", "Annonces", nNew, true)}${tab("collectes", "Collectes", nCol, false)}</div>${body}</section>`;
+  const seen = annSeen(), ann = annoncesAccueil(), col = collectesOuvertes(), c = col[0];
+  const nouvelles = ann.filter(x => (x.ts||0) > seen && x.auteurUid !== myUid()).sort((x,y) => (y.ts||0) - (x.ts||0)), nNew = nouvelles.length;
+  // la case montre d'abord la dernière annonce pas encore vue, sinon la prochaine à venir
+  const a = nouvelles[0] || ann[0];
+  const annTile = `<button class="stat tile2" type="button" data-action="annonces" aria-label="Annonces">
+      <span class="eyebrow">Annonces${nNew ? ` <span class="pill new">${nNew}</span>` : ""}</span>
+      ${a ? `<span class="pill role" style="align-self:flex-start">${esc(ANN_TYPES[a.type] || "Information")}</span><b class="t">${esc(a.titre)}</b>${a.date ? `<span class="muted s">${esc(dateLabel(a.date))}</span>` : ""}`
+          : `<b class="t muted" style="font-weight:400">Aucune annonce</b>`}
+      <span class="go">${ann.length > 1 ? `+ ${ann.length - 1} autre${ann.length > 2 ? "s" : ""}` : "Ouvrir"} ›</span></button>`;
+  const colTile = `<button class="stat tile2 dia" type="button" data-action="collectes" aria-label="Collectes">
+      <span class="eyebrow">Collectes${col.length ? ` <span class="pill ok">${col.length}</span>` : ""}</span>
+      ${c ? `<b class="t">${esc(c.titre)}</b><span class="bar"><i style="width:${collectePct(c)}%"></i></span><span class="muted s num">${collectePct(c)} % de ${esc(money(c.objectif, c.devise))}</span>`
+          : `<b class="t muted" style="font-weight:400">Aucune en cours</b>`}
+      <span class="go">${col.length > 1 ? `+ ${col.length - 1} autre${col.length > 2 ? "s" : ""}` : "Ouvrir"} ›</span></button>`;
+  return `<div class="split">${annTile}${colTile}</div>`;
 }
 function collectesSheet(){
   const fin = state.collectes.filter(c => !c.ouverte).sort((a,b) => (b.ts||0) - (a.ts||0));
   const enCours = collectesOuvertes();
-  openSheet("Collectes", `${enCours.length ? `<div class="section"><h2>En cours</h2><div class="stack" style="gap:8px">${enCours.map(collecteCard).join("")}</div></div>` : ""}
-    <div class="section"><h2>Terminées</h2><div class="stack" style="gap:8px">${fin.map(collecteCard).join("") || `<div class="empty">Aucune collecte terminée.</div>`}</div></div>`);
+  openSheet("Collectes", `${canManageCollecte() ? `<button class="btn primary" type="button" data-action="add-collecte">${ICONS.plus}Nouvelle collecte</button>` : ""}${enCours.length ? `<div class="section"><h2>En cours</h2><div class="stack" style="gap:8px">${enCours.map(collecteCard).join("")}</div></div>` : ""}
+    ${enCours.length || fin.length ? "" : `<div class="empty">Aucune collecte pour l'instant.</div>`}
+    ${fin.length ? `<div class="section"><h2>Terminées</h2><div class="stack" style="gap:8px">${fin.map(collecteCard).join("")}</div></div>` : ""}`);
 }
 function collecteText(c){
   return `🤝 Collecte de l'Igna Djongo\n*${c.titre}*\n` + (c.texte ? `${c.texte}\n` : "") +
@@ -1403,9 +1410,8 @@ const actions = {
     const code = await store.resetPin(m); if (!code) return;
     resetSheet(m, code); },
   "relance"(){ relanceSheet(); },
-  annonces(){ annoncesSheet(); },
+  annonces(){ annoncesSheet(); render(); },
   collectes(){ collectesSheet(); },
-  "home-tab"(d){ ui.homeTab = d.v === "collectes" ? "collectes" : "annonces"; try { localStorage.setItem("igna-djongo-accueil-bloc", ui.homeTab); } catch(e){} render(); },
   collecte(d){ closeSheet(); collecteSheet(d.id); },
   "add-collecte"(){ if (!canManageCollecte()) return; closeSheet(); collecteFormSheet(null); },
   "edit-collecte"(d){ if (!canManageCollecte()) return; closeSheet(); collecteFormSheet(collecteById(d.id)); },
