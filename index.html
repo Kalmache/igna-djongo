@@ -414,7 +414,11 @@ const sortedPayments = () => [...state.payments].sort((a,b) => b.date.localeComp
 const fb = {status: ONLINE ? "init" : "local", db:null, auth:null, unsub:[], loaded:{}, signingUp:false};
 const SDK = "https://cdn.jsdelivr.net/npm/firebase@12.19.0/";
 const loadScript = src => new Promise((ok, ko) => { const t = document.createElement("script"); t.src = src; t.onload = ok; t.onerror = ko; document.head.appendChild(t); });
-const emailOf = tel => waNumber(tel) + "@igna-djongo.app";
+// après un « code oublié », le compte devient « numéro-rN@… » (N lu dans comptes/{numéro})
+const emailOf = (tel, n) => waNumber(tel) + (n ? "-r" + n : "") + "@igna-djongo.app";
+const accountN = async tel => { const d = await fb.db.doc("comptes/" + waNumber(tel)).get(); return d.exists ? (d.data().n || 0) : 0; };
+const appUrl = () => location.origin + location.pathname;
+const newResetCode = () => { const a = new Uint32Array(1); crypto.getRandomValues(a); return String(100000 + a[0] % 900000); };
 const pwdOf = pin => "igna-djongo-" + pin;
 const FV = () => firebase.firestore.FieldValue;
 const cleanCode = c => String(c || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
@@ -446,11 +450,27 @@ async function fbEnter(u){
   let ok = true;
   try { ok = (await fb.db.doc("access/" + u).get()).exists; } catch(e){ /* hors ligne : on essaie avec ce qui est gardé sur le téléphone */ }
   if (!ok){ fb.status = "noaccess"; render(); return; }
+  const r = /^(\d+)-r\d+@/.exec((fb.auth.currentUser || {}).email || "");
+  if (r) await finishRenew(u, r[1]);
   fbListen();
 }
 function liveRender(){
   if (document.activeElement && document.activeElement.id === "search-members" && ui.tab === "membres" && fb.status === "in"){ document.getElementById("member-list").innerHTML = memberListHTML(); return; }
   render();
+}
+/* Nouveau compte après un « code oublié » : on le relie à sa fiche, il reprend les rôles de l'ancien,
+   puis le code de réinitialisation est effacé. Sans effet si c'est déjà fait. */
+async function finishRenew(u, tel){
+  try {
+    const rs = await fb.db.doc("resets/" + tel).get(); if (!rs.exists) return;
+    const r = rs.data(); const b = fb.db.batch();
+    const mem = await fb.db.doc("members/" + r.member).get();
+    if (mem.exists && !mem.data().uid) b.update(mem.ref, {uid:u});
+    const ro = (await fb.db.doc("config/roles").get()).data() || {admins:[], tresoriers:[]};
+    const sw = l => (l || []).includes(r.old) ? l.filter(x => x !== r.old).concat([u]) : (l || []);
+    if (r.old && ((ro.admins || []).includes(r.old) || (ro.tresoriers || []).includes(r.old))) b.update(fb.db.doc("config/roles"), {admins:sw(ro.admins), tresoriers:sw(ro.tresoriers)});
+    b.delete(rs.ref); await b.commit();
+  } catch(e){ console.error(e); }
 }
 function fbListen(){
   const done = k => { fb.loaded[k] = true; if (fb.status === "loading" && ["members","ledger","roles"].every(x => fb.loaded[x])) fb.status = "in"; if (fb.status === "in") liveRender(); };
@@ -509,7 +529,53 @@ const store = {
       if (acc.pin !== pin) return "Code incorrect. Réessaie.";
       setSession(m.id); return null;
     }
-    try { await fb.auth.signInWithEmailAndPassword(emailOf(tel), pwdOf(pin)); return null; } catch(e){ return authMsg(e); }
+    let n = 0; try { n = await accountN(tel); } catch(e){ /* hors ligne : on essaie l'adresse de départ */ }
+    try { await fb.auth.signInWithEmailAndPassword(emailOf(tel, n), pwdOf(pin)); return null; } catch(e){ return authMsg(e); }
+  },
+  /* « Code oublié » : un responsable crée un code de réinitialisation à 6 chiffres pour ce membre.
+     L'ancien compte perd l'accès ; le membre choisit un nouveau code avec ce code-là. Renvoie le code. */
+  async resetPin(m){
+    const code = newResetCode(), tel = m.telKey || waNumber(m.tel);
+    if (!ONLINE){ state.accounts = state.accounts.filter(a => a.memberId !== m.id); state.resets = {...(state.resets || {}), [tel]:{code, member:m.id}}; save(); return code; }
+    try {
+      const prev = await fb.db.doc("resets/" + tel).get();
+      const old = m.uid || (prev.exists && prev.data().old) || "";
+      const n = (await accountN(tel)) + 1;
+      const b = fb.db.batch();
+      b.set(fb.db.doc("comptes/" + tel), {n});
+      b.set(fb.db.doc("resets/" + tel), {code, old, member:m.id, at:todayISO});
+      if (m.uid){ b.update(fb.db.doc("members/" + m.id), {uid:FV().delete()}); b.delete(fb.db.doc("access/" + m.uid)); }
+      await b.commit(); return code;
+    } catch(e){ fail(e); return null; }
+  },
+  async renew(tel, rcode, pin){
+    const k = waNumber(tel);
+    if (!ONLINE){
+      const r = (state.resets || {})[k];
+      if (!r || r.code !== rcode) return "Le code reçu n'est pas bon. Vérifie-le ou demande-en un autre au responsable.";
+      state.accounts = state.accounts.filter(a => a.memberId !== r.member); state.accounts.push({memberId:r.member, pin});
+      delete state.resets[k]; save(); setSession(r.member); return null;
+    }
+    let n; try { n = await accountN(k); } catch(e){ return "Pas de connexion internet. Réessaie."; }
+    if (!n) return "Aucun nouveau code n'a été demandé pour ce numéro. Demande au responsable de l'igna.";
+    fb.signingUp = true;
+    let user, created = false;
+    try { user = (await fb.auth.createUserWithEmailAndPassword(emailOf(k, n), pwdOf(pin))).user; created = true; }
+    catch(e){
+      if ((e && e.code) !== "auth/email-already-in-use"){ fb.signingUp = false; return authMsg(e); }
+      // déjà commencé avant (connexion coupée) : on reprend avec le même nouveau code
+      try { user = (await fb.auth.signInWithEmailAndPassword(emailOf(k, n), pwdOf(pin))).user; }
+      catch(_){ fb.signingUp = false; return "Ce code a déjà servi. Demande un nouveau code au responsable."; }
+    }
+    const u = user.uid;
+    try {
+      if (!(await fb.db.doc("access/" + u).get()).exists) await fb.db.doc("access/" + u).set({code:rcode, at:todayISO, tel:k});
+    } catch(e){
+      if (created) try { await user.delete(); } catch(_){}
+      try { await fb.auth.signOut(); } catch(_){}
+      fb.signingUp = false; fbStop(); setSession(null); fb.status = "out";
+      return e && e.code === "permission-denied" ? "Le code reçu n'est pas bon. Vérifie-le ou demande-en un autre au responsable." : "Pas de connexion internet. Réessaie."; }
+    fb.signingUp = false; await fbEnter(u); return null;
   },
   async signup(d, pin, code){
     const first = !ONLINE && !state.roles.admins.length;
@@ -677,7 +743,8 @@ function renderAccueil(){
           <span class="bar"><i style="width:${pc}%"></i></span><span class="muted num" style="font-size:.85rem">${up} à jour · ${esc(versed)} versés au total</span></button>`; }).join("")}</div></section>
     ${late.length ? `<section class="section"><div class="section-head"><h2>Pas encore payé</h2><span class="muted num">${late.length}</span></div>
       <div class="chips">${late.map(m => canPay() ? `<button class="chip unpaid" type="button" data-action="pay" data-member="${esc(m.id)}">${esc(m.nom)} <span class="plus">+</span></button>` : `<button class="chip unpaid" type="button" data-action="member" data-id="${esc(m.id)}">${esc(m.nom)}</button>`).join("")}</div>
-      <span class="muted" style="font-size:.85rem">${canPay() ? "Touche un nom pour enregistrer son paiement." : "Seul le trésorier enregistre les paiements."}</span></section>` :
+      <span class="muted" style="font-size:.85rem">${canPay() ? "Touche un nom pour enregistrer son paiement." : "Seul le trésorier enregistre les paiements."}</span>
+      ${canPay() || isAdmin() ? `<button class="btn wa" type="button" data-action="relance">${ICONS.wa}Relancer sur WhatsApp</button>` : ""}</section>` :
       `<div class="card" style="text-align:center"><b>Tout le monde est à jour ce mois-ci.</b></div>`}
     <section class="section"><div class="section-head"><h2>Encaissé ces 6 derniers mois</h2><span class="muted">en équivalent €</span></div>
       <div class="card">${chartSVG()}</div></section>
@@ -760,10 +827,37 @@ function renderCotisations(){
       <button type="button" role="tab" class="${ui.cotView==="mouvements"?"on":""}" data-action="cotview" data-v="mouvements">Mouvements</button></div>
     ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
     ${declSection()}
+    ${(canPay() || isAdmin()) && mk === curMonth && ui.cotView === "membres" && ok < state.members.length ? `<button class="btn wa" type="button" data-action="relance">${ICONS.wa}Relancer les retards sur WhatsApp</button>` : ""}
     ${body}
   </div>`;
 }
+function renderRenew(){
+  return `<div class="auth">
+    <section class="hero"><span class="label">Igna Djongo</span><h1>Code oublié</h1><p>Demande au responsable de l'igna de te donner un nouveau code. Il te l'envoie sur WhatsApp (6 chiffres). Ensuite remplis ce qui suit.</p></section>
+    <form id="renew-form" class="stack" novalidate>
+      <div class="field"><label for="rn-tel">Ton numéro de téléphone</label><input id="rn-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="+33 6… ou +269…"></div>
+      <div class="field"><label for="rn-code">Code reçu du responsable</label><input id="rn-code" name="rcode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 chiffres"></div>
+      <div class="two"><div class="field"><label for="rn-pin">Nouveau code</label><input id="rn-pin" class="pin" name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="4 chiffres"></div>
+        <div class="field"><label for="rn-pin2">Répète le code</label><input id="rn-pin2" class="pin" name="pin2" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password"></div></div>
+      <p class="field hint" id="auth-error" hidden style="color:var(--bad)"></p>
+      <button class="btn primary" type="submit">Choisir mon nouveau code</button>
+      <button class="btn ghost" type="button" data-action="auth-mode" data-v="login">Retour</button>
+    </form>
+  </div>`;
+}
+async function submitRenew(form){
+  const f = new FormData(form); const get = k => String(f.get(k)||"").trim();
+  const tel = get("tel"), rcode = get("rcode").replace(/\s/g, ""), pin = get("pin");
+  if (waNumber(tel).length < 6) return authError(form, "Vérifie ton numéro de téléphone.");
+  if (!/^\d{6}$/.test(rcode)) return authError(form, "Entre les 6 chiffres reçus du responsable.");
+  if (!/^\d{4}$/.test(pin)) return authError(form, "Le nouveau code doit faire 4 chiffres.");
+  if (pin !== get("pin2")) return authError(form, "Les deux codes ne sont pas pareils.");
+  busy(form, true); const err = await store.renew(tel, rcode, pin); busy(form, false);
+  if (err) return authError(form, err);
+  authMode = "login"; ui.tab = "accueil"; render(); scrollTo(0,0); toast("Nouveau code enregistré. Bienvenue !");
+}
 function renderAuth(){
+  if (authMode === "renew") return renderRenew();
   const fams = families();
   const login = authMode === "login";
   return `<div class="auth">
@@ -774,6 +868,7 @@ function renderAuth(){
       <div class="field"><label for="li-pin">Code secret (4 chiffres)</label><input id="li-pin" class="pin" name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password"></div>
       <p class="field hint" id="auth-error" hidden style="color:var(--bad)"></p>
       <button class="btn primary" type="submit">Se connecter</button>
+      <button class="link" type="button" data-action="auth-mode" data-v="renew" style="align-self:center">Code oublié ?</button>
       ${!ONLINE && state.example ? `<div class="demo">Pour tester : le président <b>+33 6 00 00 00 01</b> ou la trésorière <b>+33 6 00 00 00 02</b>, code <b>1234</b>. Pour créer un compte, le code de l'igna est <b>djongo</b>.</div>` : ""}
     </form>` : `<form id="signup-form" class="stack" novalidate>
       <div class="field"><label for="su-nom">Nom complet</label><input id="su-nom" name="nom" type="text" autocomplete="name"></div>
@@ -994,9 +1089,34 @@ function memberSheet(id){
     ${canDeclare() && m.uid === myUid() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
     ${canPay() ? `<button class="btn primary" type="button" data-action="pay" data-member="${esc(m.id)}">${ICONS.plus}Enregistrer un paiement</button>` : ""}
     <div class="section"><h2>Ses paiements</h2><div class="list">${pays.map(movementItem).join("") || `<div class="empty">Aucun paiement enregistré.</div>`}</div></div>
+    ${isAdmin() && m.id !== (me() || {}).id && (!ONLINE || m.uid || m.telKey) ? `<button class="btn ghost" type="button" data-action="reset-pin" data-id="${esc(m.id)}">${ICONS.info}Code oublié : donner un nouveau code</button>` : ""}
     ${canEditMember(m) || (isAdmin() && m.uid !== myUid()) ? `<div class="btn-row">${canEditMember(m) ? `<button class="btn ghost" type="button" data-action="edit-member" data-id="${esc(m.id)}">Modifier</button>` : ""}${isAdmin() && m.uid !== myUid() ? `<button class="btn danger" type="button" data-action="ask-delete">Retirer</button>` : ""}</div>` : ""}
     <div class="confirm" id="confirm-del" hidden><span>Retirer <b>${esc(m.nom)}</b> de la liste ? Ses paiements restent dans la caisse.${m.uid ? " Son compte n'aura plus accès à l'application." : ""}</span>
       <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-member" data-id="${esc(m.id)}">Oui, retirer</button></div></div>`);
+}
+function resetSheet(m, code){
+  const msg = `Bonjour ${m.nom.split(" ")[0]}, voici ton code pour choisir un nouveau code secret dans l'application Igna Djongo : ${code}\n\nOuvre ${appUrl()} , touche « Code oublié ? », puis entre ton numéro, ce code et ton nouveau code à 4 chiffres.`;
+  openSheet("Nouveau code", `
+    <p style="margin:0">Envoie ce code à <b>${esc(m.nom)}</b>. Il s'en sert une seule fois pour choisir son nouveau code secret.</p>
+    <div class="card" style="text-align:center"><span class="num" style="font-family:var(--font-display);font-size:2.4rem;letter-spacing:.2em">${esc(code)}</span></div>
+    <a class="btn wa" href="https://wa.me/${esc(waNumber(m.tel))}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">${ICONS.wa}Envoyer sur WhatsApp</a>
+    <p class="muted" style="margin:0;font-size:.85rem">S'il avait un rôle (trésorier, responsable), il le retrouve tout seul avec son nouveau code.</p>`);
+}
+const relanceKey = () => "igna-djongo-relance-" + curMonth;
+const relanceDone = () => { try { return JSON.parse(localStorage.getItem(relanceKey()) || "[]"); } catch(e){ return []; } };
+const markRelance = id => { try { const l = relanceDone(); if (!l.includes(id)) l.push(id); localStorage.setItem(relanceKey(), JSON.stringify(l)); } catch(e){} };
+function relanceSheet(){
+  const ml = monthLabel(curMonth).toLowerCase(), mois = (/^[aeiouy]/.test(ml) ? "d'" : "de ") + ml, url = appUrl(), done = relanceDone();
+  const late = state.members.filter(m => m.id !== (me() || {}).id && !isUpToDate(m.id, curMonth) && !pendingFor(m.id, curMonth).length).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
+  const msgFor = m => { const dv = devOfMember(m), reste = Math.max(0, expectedOf(m) - paidMonth(m.id, curMonth));
+    return `Bonjour ${m.nom.split(" ")[0]}, petit rappel de l'Igna Djongo : ta cotisation ${mois} (${money(reste, dv)}) n'est pas encore arrivée. Quand tu as payé, touche « J'ai cotisé » dans l'application : ${url}\nMerci et à bientôt !`; };
+  const groupe = `Rappel de l'Igna Djongo : la cotisation ${mois} (${money(state.settings.mensuelle, "EUR")} pour la diaspora, ${money(state.settings.mensuelleKMF, "KMF")} aux Comores) est à verser au trésorier. Quand c'est fait, touchez « J'ai cotisé » dans l'application : ${url}\nMerci à tous !`;
+  openSheet("Relancer les retards", `
+    <p style="margin:0">Touche un nom pour lui envoyer un petit rappel sur WhatsApp. Le message est déjà écrit, tu peux le modifier avant d'envoyer.</p>
+    <a class="btn ghost" href="https://wa.me/?text=${encodeURIComponent(groupe)}" target="_blank" rel="noopener">${ICONS.wa}Rappel pour le groupe (sans noms)</a>
+    <div class="list">${late.map(m => `<a class="item" href="https://wa.me/${esc(waNumber(m.tel))}?text=${encodeURIComponent(msgFor(m))}" target="_blank" rel="noopener" data-action="relance-sent" data-id="${esc(m.id)}" style="color:inherit;text-decoration:none">${avatar(m)}
+      <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(money(Math.max(0, expectedOf(m) - paidMonth(m.id, curMonth)), devOfMember(m)))} à payer</span></span>
+      <span class="pill ${done.includes(m.id) ? "ok" : "wait"}" data-relance="${esc(m.id)}">${done.includes(m.id) ? "Envoyé ✓" : "Relancer"}</span></a>`).join("") || `<div class="empty">Personne à relancer : tout le monde a payé ou attend une confirmation.</div>`}</div>`);
 }
 function movementSheet(id){
   const p = state.payments.find(x => x.id === id); if (!p) return;
@@ -1076,6 +1196,12 @@ const actions = {
   "goto-decl"(){ ui.tab = "cotisations"; ui.cotView = "membres"; render(); scrollTo(0,0); },
   "decl-ok"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc || !canPay()) return; store.confirmDecl(dc); render(); const m = memberById(dc.memberId); toast(`Paiement${m ? " de " + m.nom.split(" ")[0] : ""} confirmé`); },
   "decl-no"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc) return; if (!confirm(canPay() ? "Refuser ce paiement ? Il sera retiré de la liste." : "Annuler ce paiement déclaré ?")) return; store.dropDecl(dc.id); render(); toast(canPay() ? "Paiement refusé" : "Déclaration annulée"); },
+  async "reset-pin"(d){ const m = memberById(d.id); if (!m || !isAdmin()) return;
+    if (!confirm(`Donner un nouveau code à ${m.nom} ? Son ancien code ne marchera plus.`)) return;
+    const code = await store.resetPin(m); if (!code) return;
+    resetSheet(m, code); },
+  "relance"(){ relanceSheet(); },
+  "relance-sent"(d){ markRelance(d.id); const it = document.querySelector(`[data-relance="${CSS.escape(d.id)}"]`); if (it) it.textContent = "Envoyé ✓"; },
   "remove-photo"(d){ store.setPhoto(d.id, null); memberSheet(d.id); render(); toast("Photo enlevée"); },
   "my-profile"(){ const m = me(); if (m){ closeSheet(); memberSheet(m.id); } },
   "edit-member"(d){ closeSheet(); memberFormSheet(memberById(d.id)); },
@@ -1121,6 +1247,7 @@ document.addEventListener("submit", e => {
   else if (e.target.id === "declare-form") submitDeclare(e.target);
   else if (e.target.id === "chapter-form") submitChapter(e.target);
   else if (e.target.id === "login-form") submitLogin(e.target);
+  else if (e.target.id === "renew-form") submitRenew(e.target);
   else if (e.target.id === "signup-form") submitSignup(e.target);
   else if (e.target.id === "join-form") submitJoin(e.target);
   else if (e.target.id === "settings-form"){
