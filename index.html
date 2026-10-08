@@ -229,6 +229,17 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 .chapter .excerpt{color:var(--ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
 .chapter .by{font-size:.8rem;color:var(--muted)}
 .pill.ex{background:var(--warn-soft);color:var(--warn)}
+.annonce{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:var(--radius);padding:12px 14px;color:inherit;font:inherit}
+.annonce.deces{border-left-color:var(--muted)} .annonce.reunion{border-left-color:var(--green)}
+.annonce h3{margin:0;font-size:1rem} .annonce .excerpt{color:var(--muted);font-size:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.annonce .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--muted)}
+.pill.new{background:var(--green);color:#fff}
+.bilan-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)} .bilan-row:last-child{border-bottom:0}
+.bilan-row b{text-align:right}
+.field textarea.short{min-height:110px}
+@media print{body{background:#fff} .app,.fab,nav.tabs,.toast,.no-print{display:none!important}
+  .overlay{position:static;background:none;display:block} .sheet{max-height:none;overflow:visible;box-shadow:none;animation:none;max-width:none;border-radius:0}
+  .grabber,.sheet-head .icon-btn{display:none}}
 .story{white-space:pre-line;font-size:1.05rem;line-height:1.6;max-width:65ch}
 .field textarea{width:100%;min-height:200px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px;font:inherit;line-height:1.5;resize:vertical}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chapter .periode{color:var(--gold)}}
@@ -368,14 +379,14 @@ function seed(){
   ];
   return {members, payments, accounts, histoire, settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:["m1"], tresoriers:["m2"]}, invite:"djongo", example:true, declarations:[]};
 }
-const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false, declarations:[]});
+const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], annonces:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false, declarations:[]});
 function load(){
   if (ONLINE) return emptyState();
   try { const raw = localStorage.getItem(KEY); if (raw){ const d = JSON.parse(raw); if (d && d.members && d.payments && d.roles) return d; } } catch(e){}
   return seed();
 }
 function save(){ if (ONLINE) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
-let state = load(); if (!state.declarations) state.declarations = [];
+let state = load(); if (!state.declarations) state.declarations = []; if (!state.annonces) state.annonces = [];
 const SKEY = "igna-djongo-session";
 let sessionId = null; if (!ONLINE){ try { sessionId = localStorage.getItem(SKEY); } catch(e){} }
 const setSession = id => { sessionId = id; if (ONLINE) return; try { id ? localStorage.setItem(SKEY, id) : localStorage.removeItem(SKEY); } catch(e){} };
@@ -480,6 +491,7 @@ function fbListen(){
   L(fb.db.collection("ledger"), q => { state.payments = q.docs.flatMap(d => d.data().items || []); }, "ledger");
   // à part : si les règles ne sont pas encore à jour, l'application continue de marcher sans cette liste
   fb.unsub.push(fb.db.collection("declarations").onSnapshot(q => { state.declarations = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.declarations = []; }));
+  fb.unsub.push(fb.db.collection("annonces").onSnapshot(q => { state.annonces = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.annonces = []; }));
   L(fb.db.collection("histoire"), q => { state.histoire = q.docs.map(d => ({...d.data(), id:d.id})); }, "histoire");
   L(fb.db.doc("config/roles"), d => { const r = d.data() || {}; state.roles = {admins:r.admins || [], tresoriers:r.tresoriers || []}; }, "roles");
   L(fb.db.doc("config/settings"), d => { if (d.exists) state.settings = {mensuelle:20, mensuelleKMF:5000, ...d.data()}; }, "settings");
@@ -512,6 +524,9 @@ const store = {
     fb.db.doc("ledger/" + p.date.slice(0,7)).set({items: FV().arrayUnion(p)}, {merge:true}).catch(fail); },
   deletePayment(p){ if (!ONLINE){ state.payments = state.payments.filter(x => x.id !== p.id); save(); return; }
     fb.db.doc("ledger/" + p.date.slice(0,7)).update({items: FV().arrayRemove(p)}).catch(fail); },
+  addAnnonce(a){ if (!ONLINE){ state.annonces.push({id:uid("a"), ...a}); save(); return; } fb.db.collection("annonces").add(a).catch(fail); },
+  updateAnnonce(id, d){ if (!ONLINE){ Object.assign(state.annonces.find(x => x.id === id), d); save(); return; } fb.db.doc("annonces/" + id).update(d).catch(fail); },
+  deleteAnnonce(id){ if (!ONLINE){ state.annonces = state.annonces.filter(x => x.id !== id); save(); return; } fb.db.doc("annonces/" + id).delete().catch(fail); },
   addChapter(c){ if (!ONLINE){ state.histoire.push({id:uid("h"), ...c}); save(); return; } fb.db.collection("histoire").add(c).catch(fail); },
   updateChapter(id, d){ if (!ONLINE){ Object.assign(state.histoire.find(x => x.id === id), d); save(); return; } fb.db.doc("histoire/" + id).update(d).catch(fail); },
   deleteChapter(id){ if (!ONLINE){ state.histoire = state.histoire.filter(x => x.id !== id); save(); return; } fb.db.doc("histoire/" + id).delete().catch(fail); },
@@ -721,6 +736,7 @@ function renderAccueil(){
   <div class="stack">
     ${canPay() && state.declarations.length ? `<button class="notice" type="button" data-action="goto-decl" style="border:0;text-align:left;color:var(--ink);background:var(--gold-soft)">${ICONS.info}<span><b>${state.declarations.length} paiement${state.declarations.length > 1 ? "s" : ""} à confirmer.</b> Touche ici pour les voir.</span></button>` : ""}
     ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
+    ${annoncesSection()}
     <section class="hero" aria-label="Total de la caisse">
       <span class="label">Total en caisse</span>
       <div class="cash num"><div><span class="cur">Caisse en euros</span><b>${esc(money(t.cash.EUR, "EUR"))}</b></div><div><span class="cur">Caisse en francs comoriens</span><b>${esc(money(t.cash.KMF, "KMF"))}</b></div></div>
@@ -751,6 +767,103 @@ function renderAccueil(){
     <section class="section"><div class="section-head"><h2>Derniers mouvements</h2><button class="link" type="button" data-action="goto-hist">Tout voir</button></div>
       <div class="list">${sortedPayments().slice(0,5).map(movementItem).join("") || `<div class="empty">Aucun mouvement pour l'instant.</div>`}</div></section>
   </div>`;
+}
+/* ---------- annonces ---------- */
+const ANN_TYPES = {reunion:"Réunion", evenement:"Événement", deces:"Décès", collecte:"Collecte", info:"Information"};
+const dayLabel = iso => { const [y,m,d] = iso.split("-").map(Number); const s = new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"}).format(new Date(y,m-1,d)); return s.charAt(0).toUpperCase()+s.slice(1); };
+const seenKey = "igna-djongo-annonces-vues";
+const annSeen = () => { try { return Number(localStorage.getItem(seenKey) || 0); } catch(e){ return 0; } };
+const markAnnSeen = () => { try { localStorage.setItem(seenKey, String(Date.now())); } catch(e){} };
+const canEditAnnonce = a => isAdmin() || (!!myUid() && a.auteurUid === myUid());
+// à venir d'abord (la plus proche en premier), puis les autres de la plus récente à la plus ancienne
+const annoncesTriees = () => { const fut = state.annonces.filter(a => a.date && a.date >= todayISO).sort((a,b) => a.date.localeCompare(b.date));
+  const rest = state.annonces.filter(a => !(a.date && a.date >= todayISO)).sort((a,b) => (b.ts||0) - (a.ts||0)); return [...fut, ...rest]; };
+const annoncesAccueil = () => { const limite = Date.now() - 30*86400000;
+  return annoncesTriees().filter(a => (a.date && a.date >= todayISO) || (a.ts||0) > limite).slice(0, 3); };
+function annonceCard(a, seen){
+  const quand = [a.date ? dayLabel(a.date) : "", a.lieu || ""].filter(Boolean).join(" · ");
+  return `<button class="annonce ${esc(a.type)}" type="button" data-action="annonce" data-id="${esc(a.id)}">
+    <span class="meta"><span class="pill role">${esc(ANN_TYPES[a.type] || "Information")}</span>${(a.ts||0) > seen && a.auteurUid !== myUid() ? `<span class="pill new">Nouveau</span>` : ""}${quand ? `<span>${esc(quand)}</span>` : ""}</span>
+    <h3>${esc(a.titre)}</h3>${a.texte ? `<span class="excerpt">${esc(a.texte)}</span>` : ""}</button>`;
+}
+function annoncesSection(){
+  const list = annoncesAccueil(), seen = annSeen();
+  return `<section class="section"><div class="section-head"><h2>Annonces</h2>${state.annonces.length ? `<button class="link" type="button" data-action="annonces">Tout voir</button>` : ""}</div>
+    ${list.length ? `<div class="stack" style="gap:8px">${list.map(a => annonceCard(a, seen)).join("")}</div>` : `<div class="card empty">Aucune annonce pour l'instant.</div>`}
+    <button class="btn ghost" type="button" data-action="add-annonce">${ICONS.plus}Publier une annonce</button></section>`;
+}
+function annoncesSheet(){
+  const seen = annSeen(); markAnnSeen();
+  openSheet("Annonces", `<button class="btn primary" type="button" data-action="add-annonce">${ICONS.plus}Publier une annonce</button>
+    <div class="stack" style="gap:8px">${annoncesTriees().map(a => annonceCard(a, seen)).join("") || `<div class="empty">Aucune annonce pour l'instant.</div>`}</div>`);
+}
+function annonceText(a){
+  return `📢 ${ANN_TYPES[a.type] || "Annonce"} – Igna Djongo\n*${a.titre}*` + (a.date ? `\n📅 ${dayLabel(a.date)}` : "") + (a.lieu ? `\n📍 ${a.lieu}` : "") + (a.texte ? `\n\n${a.texte}` : "") + `\n\n${appUrl()}`;
+}
+function annonceSheet(id){
+  const a = state.annonces.find(x => x.id === id); if (!a) return;
+  const au = a.auteur ? memberById(a.auteur) : null;
+  openSheet(ANN_TYPES[a.type] || "Annonce", `
+    <div class="card stack" style="gap:8px"><h3 style="margin:0;font-size:1.2rem">${esc(a.titre)}</h3>
+      ${a.date ? `<span><b>${esc(dayLabel(a.date))}</b> ${esc(a.date.slice(0,4))}</span>` : ""}${a.lieu ? `<span class="muted">${esc(a.lieu)}</span>` : ""}
+      ${a.texte ? `<p style="margin:0;white-space:pre-wrap">${esc(a.texte)}</p>` : ""}
+      <span class="muted" style="font-size:.85rem">Publié${au ? " par " + esc(au.nom) : ""} le ${esc(dateLabel(a.at))}</span></div>
+    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(annonceText(a))}" target="_blank" rel="noopener">${ICONS.wa}Partager sur WhatsApp</a>
+    ${canEditAnnonce(a) ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-annonce" data-id="${esc(a.id)}">Modifier</button><button class="btn danger" type="button" data-action="ask-delete">Supprimer</button></div>
+    <div class="confirm" id="confirm-del" hidden><span>Supprimer cette annonce ?</span>
+      <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-annonce" data-id="${esc(a.id)}">Oui, supprimer</button></div></div>` : ""}`);
+}
+function annonceFormSheet(a){
+  openSheet(a ? "Modifier l'annonce" : "Publier une annonce", `
+  <form id="annonce-form" class="stack" novalidate data-id="${a ? esc(a.id) : ""}">
+    <div class="field"><label for="an-type">Type</label><select id="an-type" name="type">${Object.entries(ANN_TYPES).map(([k,l]) => `<option value="${k}" ${(a ? a.type : "info") === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div class="field"><label for="an-titre">Titre</label><input id="an-titre" name="titre" type="text" maxlength="200" value="${a ? esc(a.titre) : ""}" placeholder="Ex. : Réunion générale de l'igna"></div>
+    <div class="two"><div class="field"><label for="an-date">Date (si c'est un événement)</label><input id="an-date" name="date" type="date" value="${a && a.date ? esc(a.date) : ""}"></div>
+      <div class="field"><label for="an-lieu">Lieu</label><input id="an-lieu" name="lieu" type="text" maxlength="200" value="${a ? esc(a.lieu || "") : ""}" placeholder="Ex. : Moroni, ou en ligne"></div></div>
+    <div class="field"><label for="an-texte">Message</label><textarea class="short" id="an-texte" name="texte" maxlength="5000" placeholder="Ce que tout le monde doit savoir…">${a ? esc(a.texte || "") : ""}</textarea></div>
+    <p class="field hint" id="an-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">${a ? "Enregistrer les changements" : "Publier"}</button>
+  </form>`);
+}
+function submitAnnonce(form){
+  const f = new FormData(form); const get = k => String(f.get(k) || "").trim();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(get("date")) ? get("date") : "";
+  const d = {type: ANN_TYPES[get("type")] ? get("type") : "info", titre:get("titre").slice(0,200), texte:get("texte").slice(0,5000), date, lieu:get("lieu").slice(0,200)};
+  if (!d.titre){ const e = form.querySelector("#an-error"); e.textContent = "Écris au moins un titre."; e.hidden = false; return; }
+  const id = form.dataset.id;
+  if (id){ store.updateAnnonce(id, d); toast("Annonce modifiée"); }
+  else { store.addAnnonce({...d, auteur: me() ? me().id : "", auteurUid: myUid(), at:todayISO, ts:Date.now()}); toast("Annonce publiée"); }
+  closeSheet(); render();
+}
+
+/* ---------- bilan du mois ---------- */
+const deMois = mk => { const l = monthLabel(mk).toLowerCase(); return (/^[aeiouy]/.test(l) ? "d'" : "de ") + l; };
+function bilanData(mk){
+  const pays = state.payments.filter(p => p.date.startsWith(mk));
+  const inn = sumBag(pays.filter(p => !isOut(p))), out = sumBag(pays.filter(isOut));
+  const sorties = pays.filter(isOut).sort((a,b) => a.date.localeCompare(b.date));
+  const lieu = k => { const g = state.members.filter(m => m.lieu === k); return [g.filter(m => isUpToDate(m.id, mk)).length, g.length]; };
+  const ok = state.members.filter(m => isUpToDate(m.id, mk)).length;
+  return {inn, out, sorties, ok, n:state.members.length, km:lieu("comores"), dia:lieu("diaspora"), t:totals()};
+}
+function bilanText(mk){
+  const b = bilanData(mk);
+  return `📊 Bilan de l'Igna Djongo – ${monthLabel(mk).toLowerCase()}\n\n` +
+    `✅ Membres à jour : ${b.ok} sur ${b.n} (Comores ${b.km[0]}/${b.km[1]}, diaspora ${b.dia[0]}/${b.dia[1]})\n` +
+    `➕ Entrées du mois : ${multi(b.inn)}\n➖ Sorties du mois : ${multi(b.out)}\n` +
+    (b.sorties.length ? b.sorties.map(p => `   • ${p.motif || CATS[p.cat]} : ${money(p.montant, devOfPay(p))}`).join("\n") + "\n" : "") +
+    `💰 Caisse aujourd'hui : ${multi(b.t.cash)} (environ ${money(Math.round(b.t.eur), "EUR")})\n\nTout le détail dans l'application : ${appUrl()}`;
+}
+function bilanSheet(mk){
+  const b = bilanData(mk);
+  const row = (l, v) => `<div class="bilan-row"><span>${l}</span><b class="num">${v}</b></div>`;
+  openSheet("Bilan " + deMois(mk), `
+    <div class="card">${row("Membres à jour", `${b.ok} sur ${b.n}`)}${row("Aux Comores", `${b.km[0]} sur ${b.km[1]}`)}${row("Diaspora", `${b.dia[0]} sur ${b.dia[1]}`)}
+      ${row("Entrées du mois", `<span class="amt in">+${esc(multi(b.inn))}</span>`)}${row("Sorties du mois", `<span class="amt out">−${esc(multi(b.out))}</span>`)}
+      ${row("Caisse aujourd'hui", `${esc(multi(b.t.cash))}<br><span class="muted" style="font-weight:400">environ ${esc(money(Math.round(b.t.eur), "EUR"))}</span>`)}</div>
+    ${b.sorties.length ? `<div class="section"><h2>Dépenses du mois</h2><div class="card">${b.sorties.map(p => row(`${esc(p.motif || CATS[p.cat])} <span class="muted">· ${esc(dateLabel(p.date))}</span>`, esc(money(p.montant, devOfPay(p))))).join("")}</div></div>` : ""}
+    <a class="btn wa no-print" href="https://wa.me/?text=${encodeURIComponent(bilanText(mk))}" target="_blank" rel="noopener">${ICONS.wa}Partager sur WhatsApp</a>
+    <button class="btn ghost no-print" type="button" data-action="print">Imprimer pour l'assemblée</button>`);
 }
 function memberRow(m){
   const ok = isUpToDate(m.id, curMonth);
@@ -823,6 +936,7 @@ function renderCotisations(){
       <div class="stat"><span class="muted">À jour</span><b class="num">${ok} / ${state.members.length}</b></div>
       <div class="stat"><span class="muted">Entrées · sorties</span><b class="num" style="font-size:.95rem;line-height:1.35"><span class="amt in">+${esc(multi(inn))}</span><br><span class="amt out">−${esc(multi(out))}</span></b></div>
     </div>
+    <button class="btn ghost" type="button" data-action="bilan">Bilan ${esc(deMois(mk))} à partager</button>
     <div class="seg" role="tablist"><button type="button" role="tab" class="${ui.cotView==="membres"?"on":""}" data-action="cotview" data-v="membres">Qui a payé</button>
       <button type="button" role="tab" class="${ui.cotView==="mouvements"?"on":""}" data-action="cotview" data-v="mouvements">Mouvements</button></div>
     ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
@@ -1201,6 +1315,13 @@ const actions = {
     const code = await store.resetPin(m); if (!code) return;
     resetSheet(m, code); },
   "relance"(){ relanceSheet(); },
+  annonces(){ annoncesSheet(); },
+  annonce(d){ closeSheet(); annonceSheet(d.id); markAnnSeen(); render(); },
+  "add-annonce"(){ closeSheet(); annonceFormSheet(null); },
+  "edit-annonce"(d){ closeSheet(); annonceFormSheet(state.annonces.find(x => x.id === d.id)); },
+  "delete-annonce"(d){ store.deleteAnnonce(d.id); closeSheet(); render(); toast("Annonce supprimée"); },
+  bilan(){ bilanSheet(ui.month || curMonth); },
+  print(){ window.print(); },
   "relance-sent"(d){ markRelance(d.id); const it = document.querySelector(`[data-relance="${CSS.escape(d.id)}"]`); if (it) it.textContent = "Envoyé ✓"; },
   "remove-photo"(d){ store.setPhoto(d.id, null); memberSheet(d.id); render(); toast("Photo enlevée"); },
   "my-profile"(){ const m = me(); if (m){ closeSheet(); memberSheet(m.id); } },
@@ -1246,6 +1367,7 @@ document.addEventListener("submit", e => {
   else if (e.target.id === "member-form") submitMember(e.target);
   else if (e.target.id === "declare-form") submitDeclare(e.target);
   else if (e.target.id === "chapter-form") submitChapter(e.target);
+  else if (e.target.id === "annonce-form") submitAnnonce(e.target);
   else if (e.target.id === "login-form") submitLogin(e.target);
   else if (e.target.id === "renew-form") submitRenew(e.target);
   else if (e.target.id === "signup-form") submitSignup(e.target);

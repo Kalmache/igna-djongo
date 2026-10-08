@@ -172,6 +172,24 @@ service cloud.firestore {
         && str(d.moyen, 60) && str(d.note, 200) && str(d.at, 10);
     }
 
+    // Annonces (réunion, événement, décès, collecte, information) : tout membre peut publier ;
+    // seuls l'auteur et les responsables peuvent modifier ou supprimer.
+    function validAnnonce() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['type', 'titre', 'texte', 'date', 'lieu', 'auteur', 'auteurUid', 'at', 'ts'])
+        && d.type in ['reunion', 'evenement', 'deces', 'collecte', 'info']
+        && str(d.titre, 200) && d.titre.size() > 0 && str(d.get('texte', ''), 5000)
+        && str(d.get('date', ''), 10) && str(d.get('lieu', ''), 200) && str(d.get('auteur', ''), 60)
+        && str(d.at, 10) && d.ts is int;
+    }
+    match /annonces/{id} {
+      allow read: if hasAccess();
+      allow create: if hasAccess() && request.resource.data.auteurUid == me() && validAnnonce();
+      allow update: if hasAccess() && (resource.data.auteurUid == me() || isAdmin())
+        && !changed().hasAny(['auteurUid', 'auteur', 'at', 'ts']) && validAnnonce();
+      allow delete: if hasAccess() && (resource.data.auteurUid == me() || isAdmin());
+    }
+
     function validChapter() {
       let d = request.resource.data;
       return d.keys().hasOnly(['titre', 'texte', 'periode', 'annee', 'ordre', 'auteur', 'auteurUid', 'ajoute', 'exemple'])
