@@ -17,6 +17,14 @@ service cloud.firestore {
     // qu'une fiche porte bien le même numéro que le compte.
     function myTel() { return request.auth.token.email; }
     function isBanned() { return exists(/databases/$(database)/documents/bannis/$(me())); }
+    // « Code oublié » : le responsable donne un code de réinitialisation. Le membre crée alors
+    // un nouveau compte « numéro-rN@igna-djongo.app » (N = comptes/{numéro}.n) avec son nouveau code.
+    function comptesDoc(tel) { return /databases/$(database)/documents/comptes/$(tel); }
+    function resetDoc(tel) { return /databases/$(database)/documents/resets/$(tel); }
+    function isRenewed(tel) {
+      return exists(comptesDoc(tel)) && myTel() == tel + '-r' + string(get(comptesDoc(tel)).data.n) + '@igna-djongo.app';
+    }
+    function telOk(tel) { return myTel() == tel + '@igna-djongo.app' || isRenewed(tel); }
 
     // Un document par compte autorisé. On le crée avec le bon code de l'igna
     // (ou sans code pour le tout premier compte, qui devient responsable).
@@ -24,10 +32,14 @@ service cloud.firestore {
       allow get: if signedIn() && (userId == me() || isAdmin());
       allow list: if isAdmin();
       allow create: if signedIn() && userId == me()
-        && request.resource.data.keys().hasOnly(['code', 'at'])
+        && request.resource.data.keys().hasOnly(['code', 'at', 'tel'])
         && str(request.resource.data.code, 30)
         && !isBanned()
-        && (noRolesYet() || exists(/databases/$(database)/documents/invites/$(request.resource.data.code)));
+        && (noRolesYet() || exists(/databases/$(database)/documents/invites/$(request.resource.data.code))
+            // ou avec le code de réinitialisation donné par un responsable
+            || ('tel' in request.resource.data && str(request.resource.data.tel, 30)
+                && isRenewed(request.resource.data.tel) && exists(resetDoc(request.resource.data.tel))
+                && get(resetDoc(request.resource.data.tel)).data.code == request.resource.data.code));
       // un responsable ne peut pas se retirer lui-même l'accès
       allow delete: if isAdmin() && userId != me();
       allow update: if false;
@@ -41,6 +53,27 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Numéro de version du compte de chaque numéro (après un « code oublié »).
+    // Lisible sans être connecté : il sert à se connecter.
+    match /comptes/{tel} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isAdmin() && request.resource.data.keys().hasOnly(['n'])
+        && request.resource.data.n is int && request.resource.data.n > 0
+        && (resource == null || request.resource.data.n > resource.data.n);
+      allow delete: if false;
+    }
+    // Code de réinitialisation en attente. old = l'ancien compte, pour lui reprendre ses rôles.
+    match /resets/{tel} {
+      allow get: if isAdmin() || (signedIn() && isRenewed(tel));
+      allow list: if false;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['code', 'old', 'member', 'at'])
+        && str(request.resource.data.code, 12) && str(request.resource.data.old, 128)
+        && str(request.resource.data.member, 60) && str(request.resource.data.at, 10);
+      allow delete: if isAdmin() || (hasAccess() && isRenewed(tel));
+    }
+
     // Les codes valides. On peut vérifier un code précis, jamais lister.
     match /invites/{code} {
       allow get: if signedIn();
@@ -50,14 +83,25 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    function swapped(l, old) { return old in l ? l.removeAll([old]).concat([me()]) : l; }
+    function rolesSwapOk() {
+      let tel = get(/databases/$(database)/documents/access/$(me())).data.tel;
+      let old = get(resetDoc(tel)).data.old;
+      return isRenewed(tel)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['admins', 'tresoriers'])
+        && request.resource.data.admins == swapped(resource.data.admins, old)
+        && request.resource.data.tresoriers == swapped(resource.data.tresoriers, old);
+    }
     match /config/roles {
       allow get: if hasAccess();
       allow create: if hasAccess() && noRolesYet()
         && request.resource.data.admins == [me()]
         && request.resource.data.tresoriers == [me()];
-      allow update: if isAdmin()
+      allow update: if (isAdmin()
         && request.resource.data.admins is list && request.resource.data.admins.size() > 0
-        && request.resource.data.tresoriers is list;
+        && request.resource.data.tresoriers is list)
+        // après un « code oublié » : le nouveau compte reprend les rôles de l'ancien
+        || (hasAccess() && rolesSwapOk());
       allow delete: if false;
     }
     match /config/invite {
@@ -85,16 +129,19 @@ service cloud.firestore {
       // une fiche liée à un compte doit porter le numéro de ce compte
       allow create: if hasAccess() && validMember()
         && (!('uid' in request.resource.data)
-            || (request.resource.data.uid == me() && myTel() == request.resource.data.telKey + '@igna-djongo.app'));
+            || (request.resource.data.uid == me() && telOk(request.resource.data.telKey)));
       allow update: if hasAccess() && validMember() && (
         // un responsable ou un trésorier, sans toucher au lien avec le compte
         ((isAdmin() || isTreasurer()) && !changed().hasAny(['uid']))
+        // un responsable qui donne un nouveau code détache l'ancien compte
+        || (isAdmin() && changed().hasOnly(['uid']) && !('uid' in request.resource.data)
+            && existsAfter(resetDoc(resource.data.telKey)))
         // la personne elle-même : ses informations et sa photo, pas son rôle ni le lien
         || (resource.data.get('uid', null) == me()
             && changed().hasOnly(['nom', 'famille', 'tel', 'telKey', 'ville', 'lieu', 'photo']))
         // quelqu'un qui crée son compte et retrouve sa fiche : seulement si c'est son numéro
         || (resource.data.get('uid', null) == null && request.resource.data.uid == me()
-            && myTel() == resource.data.telKey + '@igna-djongo.app'
+            && telOk(resource.data.telKey)
             && changed().hasOnly(['uid']))
       );
       allow delete: if isAdmin();
