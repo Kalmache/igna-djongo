@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="L'application de l'Igna Djongo : membres, cotisations, caisse et histoire. Conçue par M.M.B.T.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Igna Djongo">
+<meta property="og:title" content="Igna Djongo">
+<meta property="og:description" content="Annonces, collectes et cotisations de l'Igna Djongo. Ouvre l'application pour voir le détail.">
+<meta property="og:url" content="https://kalmache.github.io/igna-djongo/">
+<meta property="og:image" content="https://kalmache.github.io/igna-djongo/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale" content="fr_FR">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -200,6 +209,7 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
 .btn.danger{background:var(--bad-soft);color:var(--bad)}
 .btn.wa{background:#1C8D4E;color:#fff}
+.btn.fb{background:#1877F2;color:#fff}
 .btn svg{width:20px;height:20px}
 .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -301,6 +311,7 @@ const ICONS = {
   gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
+  fb:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8.5V6.8c0-.8.2-1.3 1.4-1.3H17V2.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v1.9H8v3.2h2.6V21H14v-9.3h2.6l.4-3.2z"/></svg>',
   wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5 5 16a8.5 8.5 0 1 1 3.2 3.2z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/></svg>',
   search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
@@ -442,6 +453,8 @@ const loadScript = src => new Promise((ok, ko) => { const t = document.createEle
 const emailOf = (tel, n) => waNumber(tel) + (n ? "-r" + n : "") + "@igna-djongo.app";
 const accountN = async tel => { const d = await fb.db.doc("comptes/" + waNumber(tel)).get(); return d.exists ? (d.data().n || 0) : 0; };
 const appUrl = () => location.origin + location.pathname;
+/* Facebook ne reprend que le lien : le texte est copié avant, il suffit de le coller dans la publication */
+const fbBtn = text => `<a class="btn fb" href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl())}" target="_blank" rel="noopener" data-action="fb-share" data-text="${esc(text.replace(/\*/g, ""))}">${ICONS.fb}Facebook</a>`;
 const newResetCode = () => { const a = new Uint32Array(1); crypto.getRandomValues(a); return String(100000 + a[0] % 900000); };
 const pwdOf = pin => "igna-djongo-" + pin;
 const FV = () => firebase.firestore.FieldValue;
@@ -822,7 +835,8 @@ function annonceSheet(id){
       ${a.date ? `<span><b>${esc(dayLabel(a.date))}</b> ${esc(a.date.slice(0,4))}</span>` : ""}${a.lieu ? `<span class="muted">${esc(a.lieu)}</span>` : ""}
       ${a.texte ? `<p style="margin:0;white-space:pre-wrap">${esc(a.texte)}</p>` : ""}
       <span class="muted" style="font-size:.85rem">Publié${au ? " par " + esc(au.nom) : ""} le ${esc(dateLabel(a.at))}</span></div>
-    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(annonceText(a))}" target="_blank" rel="noopener">${ICONS.wa}Partager sur WhatsApp</a>
+    <span class="muted" style="font-size:.85rem;margin-bottom:-6px">Partager</span>
+    <div class="btn-row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(annonceText(a))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a>${fbBtn(annonceText(a))}</div>
     ${canEditAnnonce(a) ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-annonce" data-id="${esc(a.id)}">Modifier</button><button class="btn danger" type="button" data-action="ask-delete">Supprimer</button></div>
     <div class="confirm" id="confirm-del" hidden><span>Supprimer cette annonce ?</span>
       <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-annonce" data-id="${esc(a.id)}">Oui, supprimer</button></div></div>` : ""}`);
@@ -906,7 +920,8 @@ function collecteSheet(id){
       ${c.fin ? `<span class="muted">Jusqu'au ${esc(dayLabel(c.fin).toLowerCase())} ${esc(c.fin.slice(0,4))}</span>` : ""}${c.ouverte ? "" : `<span class="pill wait" style="align-self:flex-start">Collecte terminée</span>`}</div>
     ${c.ouverte && canPay() ? `<button class="btn primary" type="button" data-action="pay-collecte" data-id="${esc(c.id)}">${ICONS.plus}Enregistrer une participation</button>` : ""}
     ${c.ouverte && canDeclare() ? `<button class="btn primary" type="button" data-action="declare-collecte" data-id="${esc(c.id)}">${ICONS.plus}J'ai participé</button>` : ""}
-    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(collecteText(c))}" target="_blank" rel="noopener">${ICONS.wa}Partager sur WhatsApp</a>
+    <span class="muted" style="font-size:.85rem;margin-bottom:-6px">Partager</span>
+    <div class="btn-row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(collecteText(c))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a>${fbBtn(collecteText(c))}</div>
     <div class="section"><h2>Participations</h2>${rows ? `<div class="card">${rows}</div>` : `<div class="empty">Personne n'a encore participé.</div>`}</div>
     ${canManageCollecte() ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-collecte" data-id="${esc(c.id)}">Modifier</button><button class="btn ghost" type="button" data-action="toggle-collecte" data-id="${esc(c.id)}">${c.ouverte ? "Terminer la collecte" : "Rouvrir"}</button></div>` : ""}`);
 }
@@ -1454,6 +1469,10 @@ const actions = {
   "my-profile"(){ closeSheet(); if (me()) memberSheet(me().id); },
   reset(){ if (ONLINE) return; state = seed(); save(); closeSheet(); render(); toast("Données d'exemple remises"); },
   "clear-all"(){ if (ONLINE) return; setSession(null); authMode = "signup"; state = {...emptyState(), settings:{...state.settings}}; save(); closeSheet(); ui.fam = "all"; render(); toast("Liste vide : le premier compte créé sera le responsable"); },
+  "fb-share"(d){
+    const ok = () => toast("Texte copié : colle-le dans ta publication Facebook");
+    try { navigator.clipboard.writeText(d.text).then(ok, () => {}); } catch(e){}
+  },
   copy(d, el){
     const done = () => toast("Numéro copié");
     try { navigator.clipboard.writeText(d.text).then(done, () => selectPhone(el)); } catch(e){ selectPhone(el); }
