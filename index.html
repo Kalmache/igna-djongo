@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="L'application de l'Igna Djongo : membres, cotisations, caisse et histoire.">
+<meta name="description" content="L'application de l'Igna Djongo : membres, cotisations, caisse et histoire. Conçue par M.M.B.T.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Igna Djongo">
 <meta name="theme-color" content="#0E5A4A">
+<meta name="author" content="M.M.B.T">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
@@ -253,6 +254,7 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 .field textarea{width:100%;min-height:200px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px;font:inherit;line-height:1.5;resize:vertical}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chapter .periode{color:var(--gold)}}
 :root[data-theme="dark"] .chapter .periode{color:var(--gold)}
+.signature{text-align:center;font-size:.75rem;color:var(--muted);padding:24px 0 8px;letter-spacing:.05em}
 .toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 </style>
 </head>
@@ -285,8 +287,10 @@ window.IGNA_FIREBASE = {
 };
 </script>
 <script>
+// Appli « Igna Djongo », conçue par M.M.B.T (2026). Tous droits réservés.
 (function(){
 "use strict";
+const SIGNATURE = `<footer class="signature">Conçue par M.M.B.T · 2026</footer>`;
 const KEY = "igna-djongo-maquette-v3";
 const CFG = window.IGNA_FIREBASE && window.IGNA_FIREBASE.apiKey ? window.IGNA_FIREBASE : null;
 const ONLINE = !!CFG;
@@ -1190,9 +1194,11 @@ function render(){
     else if (st === "noaccess") v.innerHTML = noAccessView();
     else if (st === "error") v.innerHTML = statusView("Pas de connexion", "L'application n'arrive pas à joindre internet. Vérifie ta connexion puis rouvre l'application.");
     else v.innerHTML = statusView("Chargement…", "Un instant, on récupère les informations de l'igna.");
+    v.insertAdjacentHTML("beforeend", SIGNATURE);
     return;
   }
   v.innerHTML = ui.tab === "accueil" ? renderAccueil() : ui.tab === "membres" ? renderMembres() : ui.tab === "histoire" ? renderHistoire() : renderCotisations();
+  v.insertAdjacentHTML("beforeend", SIGNATURE);
   document.querySelectorAll("nav.tabs button").forEach(b => { const on = b.dataset.tab === ui.tab; b.classList.toggle("on", on); b.setAttribute("aria-current", on ? "page" : "false"); });
   const fab = document.getElementById("fab");
   if (ui.tab === "membres"){ fab.innerHTML = ICONS.plus + "Ajouter un membre"; fab.dataset.action = "add-member"; }

@@ -2,6 +2,8 @@
 
 L'application de l'Igna Djongo : membres, cotisations, caisse et histoire.
 
+Conçue par **M.M.B.T** (2026). Tous droits réservés, voir [LICENCE](LICENCE).
+
 Ouvrir : https://kalmache.github.io/igna-djongo/
 
 Ce dépôt contient la version publiée. Elle est construite à partir de `app/index.html`
