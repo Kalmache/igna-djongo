@@ -230,7 +230,10 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 .chapter .by{font-size:.8rem;color:var(--muted)}
 .pill.ex{background:var(--warn-soft);color:var(--warn)}
 .annonce{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:var(--radius);padding:12px 14px;color:inherit;font:inherit}
-.annonce.deces{border-left-color:var(--muted)} .annonce.reunion{border-left-color:var(--green)}
+.annonce.deces{border-left-color:var(--muted)} .annonce.anda,.annonce.wukumbi{border-left-color:var(--gold-bright)}
+.collecte{display:flex;flex-direction:column;gap:8px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;color:inherit;font:inherit}
+.collecte h3{margin:0;font-size:1rem} .collecte .row-between{font-size:.9rem}
+.collecte.closed{opacity:.75} .annonce.reunion{border-left-color:var(--green)}
 .annonce h3{margin:0;font-size:1rem} .annonce .excerpt{color:var(--muted);font-size:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .annonce .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--muted)}
 .pill.new{background:var(--green);color:#fff}
@@ -379,14 +382,14 @@ function seed(){
   ];
   return {members, payments, accounts, histoire, settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:["m1"], tresoriers:["m2"]}, invite:"djongo", example:true, declarations:[]};
 }
-const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], annonces:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false, declarations:[]});
+const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], annonces:[], collectes:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false, declarations:[]});
 function load(){
   if (ONLINE) return emptyState();
   try { const raw = localStorage.getItem(KEY); if (raw){ const d = JSON.parse(raw); if (d && d.members && d.payments && d.roles) return d; } } catch(e){}
   return seed();
 }
 function save(){ if (ONLINE) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
-let state = load(); if (!state.declarations) state.declarations = []; if (!state.annonces) state.annonces = [];
+let state = load(); if (!state.declarations) state.declarations = []; if (!state.annonces) state.annonces = []; if (!state.collectes) state.collectes = [];
 const SKEY = "igna-djongo-session";
 let sessionId = null; if (!ONLINE){ try { sessionId = localStorage.getItem(SKEY); } catch(e){} }
 const setSession = id => { sessionId = id; if (ONLINE) return; try { id ? localStorage.setItem(SKEY, id) : localStorage.removeItem(SKEY); } catch(e){} };
@@ -491,6 +494,7 @@ function fbListen(){
   L(fb.db.collection("ledger"), q => { state.payments = q.docs.flatMap(d => d.data().items || []); }, "ledger");
   // à part : si les règles ne sont pas encore à jour, l'application continue de marcher sans cette liste
   fb.unsub.push(fb.db.collection("declarations").onSnapshot(q => { state.declarations = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.declarations = []; }));
+  fb.unsub.push(fb.db.collection("collectes").onSnapshot(q => { state.collectes = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.collectes = []; }));
   fb.unsub.push(fb.db.collection("annonces").onSnapshot(q => { state.annonces = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.annonces = []; }));
   L(fb.db.collection("histoire"), q => { state.histoire = q.docs.map(d => ({...d.data(), id:d.id})); }, "histoire");
   L(fb.db.doc("config/roles"), d => { const r = d.data() || {}; state.roles = {admins:r.admins || [], tresoriers:r.tresoriers || []}; }, "roles");
@@ -505,7 +509,8 @@ const store = {
   declare(d){ if (!ONLINE){ state.declarations.push({id:uid("d"), ...d}); save(); return; } fb.db.collection("declarations").add(d).catch(fail); },
   dropDecl(id){ if (!ONLINE){ state.declarations = state.declarations.filter(x => x.id !== id); save(); return; } fb.db.doc("declarations/" + id).delete().catch(fail); },
   confirmDecl(dc){
-    const p = {id:uid("p"), memberId:dc.memberId, montant:dc.montant, devise:dc.devise, date:dc.date, cat:dc.cat, motif:dc.note || CATS[dc.cat], moyen:dc.moyen, par:myUid(), declarePar:dc.uid};
+    const c = dc.collecte ? collecteById(dc.collecte) : null;
+    const p = {id:uid("p"), memberId:dc.memberId, montant:dc.montant, devise:dc.devise, date:dc.date, cat:dc.cat, motif:dc.note || (c ? c.titre : CATS[dc.cat]), moyen:dc.moyen, par:myUid(), declarePar:dc.uid, ...(c ? {collecte:c.id} : {})};
     if (!ONLINE){ state.payments.push(p); state.declarations = state.declarations.filter(x => x.id !== dc.id); save(); return; }
     const b = fb.db.batch(); b.set(fb.db.doc("ledger/" + p.date.slice(0,7)), {items: FV().arrayUnion(p)}, {merge:true}); b.delete(fb.db.doc("declarations/" + dc.id)); b.commit().catch(fail); },
   setPhoto(id, photo){ const m = memberById(id); if (!m) return;
@@ -524,6 +529,8 @@ const store = {
     fb.db.doc("ledger/" + p.date.slice(0,7)).set({items: FV().arrayUnion(p)}, {merge:true}).catch(fail); },
   deletePayment(p){ if (!ONLINE){ state.payments = state.payments.filter(x => x.id !== p.id); save(); return; }
     fb.db.doc("ledger/" + p.date.slice(0,7)).update({items: FV().arrayRemove(p)}).catch(fail); },
+  addCollecte(c){ if (!ONLINE){ state.collectes.push({id:uid("c"), ...c}); save(); return; } fb.db.collection("collectes").add(c).catch(fail); },
+  updateCollecte(id, d){ if (!ONLINE){ Object.assign(state.collectes.find(x => x.id === id), d); save(); return; } fb.db.doc("collectes/" + id).update(d).catch(fail); },
   addAnnonce(a){ if (!ONLINE){ state.annonces.push({id:uid("a"), ...a}); save(); return; } fb.db.collection("annonces").add(a).catch(fail); },
   updateAnnonce(id, d){ if (!ONLINE){ Object.assign(state.annonces.find(x => x.id === id), d); save(); return; } fb.db.doc("annonces/" + id).update(d).catch(fail); },
   deleteAnnonce(id){ if (!ONLINE){ state.annonces = state.annonces.filter(x => x.id !== id); save(); return; } fb.db.doc("annonces/" + id).delete().catch(fail); },
@@ -653,6 +660,10 @@ async function shrinkPhoto(file){
   }
   throw new Error("trop lourde");
 }
+const collecteById = id => state.collectes.find(c => c.id === id);
+const collectesOuvertes = () => state.collectes.filter(c => c.ouverte).sort((a,b) => (b.ts||0) - (a.ts||0));
+const catOptions = sel => `<option value="mensuelle">${CATS.mensuelle}</option>${collectesOuvertes().map(c => `<option value="c:${esc(c.id)}" ${sel === c.id ? "selected" : ""}>Collecte : ${esc(c.titre)}</option>`).join("")}<option value="evenement">Événement (mariage, décès…)</option><option value="don">${CATS.don}</option>`;
+const parseCat = v => { v = String(v || ""); if (v.startsWith("c:") && collecteById(v.slice(2))) return {cat:"evenement", collecte:v.slice(2)}; return {cat: ["mensuelle","evenement","don"].includes(v) ? v : "mensuelle"}; };
 const MOYENS = ["Virement bancaire", "Espèces remises en main propre", "Mobile money (Mvola, Huri…)", "Autre"];
 const pendingFor = (memberId, mk) => state.declarations.filter(d => d.memberId === memberId && (!mk || d.date.startsWith(mk)));
 const canDeclare = () => !!me() && !canPay();
@@ -670,13 +681,12 @@ function declSection(){
   if (!list.length) return "";
   return `<div class="section"><div class="group-label"><span>${canPay() ? "Paiements à confirmer" : "Mes paiements à confirmer"}</span><span class="num">${list.length}</span></div><div class="list">${list.map(declItem).join("")}</div></div>`;
 }
-function declareSheet(){
+function declareSheet(collecteId){
   const m = me(); if (!m) return;
   openSheet("J'ai cotisé", `
   <form id="declare-form" class="stack" novalidate>
     <div class="notice">${ICONS.info}<span>Paie comme d'habitude, puis note-le ici. Le trésorier le confirmera et tu passeras « À jour ».</span></div>
-    <div class="field"><label for="dc-cat">Pour quoi ?</label><select id="dc-cat" name="cat">
-      <option value="mensuelle">${CATS.mensuelle}</option><option value="evenement">Événement (mariage, décès…)</option><option value="don">${CATS.don}</option></select></div>
+    <div class="field"><label for="dc-cat">Pour quoi ?</label><select id="dc-cat" name="cat">${catOptions(collecteId)}</select></div>
     <div class="two"><div class="field"><label for="dc-amount">Montant</label><input id="dc-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${expectedOf(m)}" required></div>
       <div class="field"><label for="dc-devise">Monnaie</label><select id="dc-devise" name="devise"><option value="EUR" ${devOfMember(m)==="EUR"?"selected":""}>Euros (€)</option><option value="KMF" ${devOfMember(m)==="KMF"?"selected":""}>Francs comoriens (FC)</option></select></div></div>
     <div class="field"><label for="dc-moyen">Comment as-tu payé ?</label><select id="dc-moyen" name="moyen">${MOYENS.map(x => `<option>${esc(x)}</option>`).join("")}</select></div>
@@ -692,9 +702,9 @@ function submitDeclare(form){
   const err = form.querySelector("#dc-error"); const bad = t => { err.textContent = t; err.hidden = false; };
   if (!(montant > 0) || montant > 10000000) return bad("Indique un montant supérieur à 0.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bad("Choisis la date du paiement.");
-  const cat = ["mensuelle","evenement","don"].includes(String(f.get("cat"))) ? String(f.get("cat")) : "mensuelle";
+  const pc = parseCat(f.get("cat")), cat = pc.cat;
   const moyen = MOYENS.includes(String(f.get("moyen"))) ? String(f.get("moyen")) : "Autre";
-  store.declare({memberId:m.id, uid:myUid(), montant, devise: f.get("devise") === "KMF" ? "KMF" : "EUR", date, cat, moyen, note:String(f.get("note") || "").trim().slice(0,200), at:todayISO});
+  store.declare({memberId:m.id, uid:myUid(), montant, devise: f.get("devise") === "KMF" ? "KMF" : "EUR", date, cat, moyen, note:String(f.get("note") || "").trim().slice(0,200), at:todayISO, ...(pc.collecte ? {collecte:pc.collecte} : {})});
   closeSheet(); render(); toast("Merci ! Le trésorier va confirmer ton paiement.");
 }
 function movementItem(p){
@@ -737,6 +747,7 @@ function renderAccueil(){
     ${canPay() && state.declarations.length ? `<button class="notice" type="button" data-action="goto-decl" style="border:0;text-align:left;color:var(--ink);background:var(--gold-soft)">${ICONS.info}<span><b>${state.declarations.length} paiement${state.declarations.length > 1 ? "s" : ""} à confirmer.</b> Touche ici pour les voir.</span></button>` : ""}
     ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
     ${annoncesSection()}
+    ${collectesSection()}
     <section class="hero" aria-label="Total de la caisse">
       <span class="label">Total en caisse</span>
       <div class="cash num"><div><span class="cur">Caisse en euros</span><b>${esc(money(t.cash.EUR, "EUR"))}</b></div><div><span class="cur">Caisse en francs comoriens</span><b>${esc(money(t.cash.KMF, "KMF"))}</b></div></div>
@@ -769,7 +780,7 @@ function renderAccueil(){
   </div>`;
 }
 /* ---------- annonces ---------- */
-const ANN_TYPES = {reunion:"Réunion", evenement:"Événement", deces:"Décès", collecte:"Collecte", info:"Information"};
+const ANN_TYPES = {reunion:"Réunion", anda:"Grand mariage (Anda)", wukumbi:"Wukumbi", evenement:"Événement", deces:"Décès", collecte:"Collecte", info:"Information"};
 const dayLabel = iso => { const [y,m,d] = iso.split("-").map(Number); const s = new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"}).format(new Date(y,m-1,d)); return s.charAt(0).toUpperCase()+s.slice(1); };
 const seenKey = "igna-djongo-annonces-vues";
 const annSeen = () => { try { return Number(localStorage.getItem(seenKey) || 0); } catch(e){ return 0; } };
@@ -834,6 +845,77 @@ function submitAnnonce(form){
   if (id){ store.updateAnnonce(id, d); toast("Annonce modifiée"); }
   else { store.addAnnonce({...d, auteur: me() ? me().id : "", auteurUid: myUid(), at:todayISO, ts:Date.now()}); toast("Annonce publiée"); }
   closeSheet(); render();
+}
+
+/* ---------- collectes par projet ---------- */
+const canManageCollecte = () => canPay() || isAdmin();
+const collecteDons = c => state.payments.filter(p => p.collecte === c.id && !isOut(p));
+const collecteTotal = c => collecteDons(c).reduce((s,p) => s + convert(p.montant, devOfPay(p), c.devise), 0);
+const collectePct = c => c.objectif > 0 ? Math.min(100, Math.round(collecteTotal(c) / c.objectif * 100)) : 0;
+function collecteCard(c){
+  const pct = collectePct(c), n = new Set(collecteDons(c).map(p => p.memberId)).size;
+  return `<button class="collecte ${c.ouverte ? "" : "closed"}" type="button" data-action="collecte" data-id="${esc(c.id)}">
+    <span class="meta" style="display:flex;gap:6px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)">${c.ouverte ? `<span class="pill ok">En cours</span>` : `<span class="pill wait">Terminée</span>`}${c.fin ? `<span>jusqu'au ${esc(dateLabel(c.fin))}</span>` : ""}</span>
+    <h3>${esc(c.titre)}</h3>
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
+    <span class="row-between num"><span><b>${esc(money(Math.round(collecteTotal(c)), c.devise))}</b> sur ${esc(money(c.objectif, c.devise))}</span><span class="muted">${pct} % · ${n} participant${n > 1 ? "s" : ""}</span></span></button>`;
+}
+function collectesSection(){
+  const list = collectesOuvertes();
+  if (!list.length && !canManageCollecte()) return "";
+  return `<section class="section"><div class="section-head"><h2>Collectes en cours</h2>${state.collectes.length > list.length ? `<button class="link" type="button" data-action="collectes">Terminées</button>` : ""}</div>
+    ${list.length ? `<div class="stack" style="gap:8px">${list.map(collecteCard).join("")}</div>` : `<div class="card empty">Aucune collecte en cours.</div>`}
+    ${canManageCollecte() ? `<button class="btn ghost" type="button" data-action="add-collecte">${ICONS.plus}Nouvelle collecte</button>` : ""}</section>`;
+}
+function collectesSheet(){
+  const fin = state.collectes.filter(c => !c.ouverte).sort((a,b) => (b.ts||0) - (a.ts||0));
+  openSheet("Collectes terminées", `<div class="stack" style="gap:8px">${fin.map(collecteCard).join("") || `<div class="empty">Aucune collecte terminée.</div>`}</div>`);
+}
+function collecteText(c){
+  return `🤝 Collecte de l'Igna Djongo\n*${c.titre}*\n` + (c.texte ? `${c.texte}\n` : "") +
+    `\nDéjà ${money(Math.round(collecteTotal(c)), c.devise)} sur ${money(c.objectif, c.devise)} (${collectePct(c)} %)` + (c.fin ? `, jusqu'au ${dayLabel(c.fin).toLowerCase()}` : "") +
+    `.\nPour participer : paie au trésorier puis touche « J'ai cotisé » dans l'application et choisis cette collecte.\n${appUrl()}`;
+}
+function collecteSheet(id){
+  const c = collecteById(id); if (!c) return;
+  const pct = collectePct(c);
+  const parMembre = {}; collecteDons(c).forEach(p => { const k = p.memberId || "?"; parMembre[k] = (parMembre[k] || 0) + convert(p.montant, devOfPay(p), c.devise); });
+  const rows = Object.entries(parMembre).sort((a,b) => b[1] - a[1]).map(([k,v]) => { const m = memberById(k);
+    return `<div class="bilan-row"><span>${esc(m ? m.nom : "Anonyme")}</span><b class="num">${esc(money(Math.round(v), c.devise))}</b></div>`; }).join("");
+  openSheet(c.titre, `
+    <div class="card stack" style="gap:10px">${c.texte ? `<p style="margin:0;white-space:pre-wrap">${esc(c.texte)}</p>` : ""}
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
+      <span class="row-between num"><span><b>${esc(money(Math.round(collecteTotal(c)), c.devise))}</b> sur ${esc(money(c.objectif, c.devise))}</span><b>${pct} %</b></span>
+      ${c.fin ? `<span class="muted">Jusqu'au ${esc(dayLabel(c.fin).toLowerCase())} ${esc(c.fin.slice(0,4))}</span>` : ""}${c.ouverte ? "" : `<span class="pill wait" style="align-self:flex-start">Collecte terminée</span>`}</div>
+    ${c.ouverte && canPay() ? `<button class="btn primary" type="button" data-action="pay-collecte" data-id="${esc(c.id)}">${ICONS.plus}Enregistrer une participation</button>` : ""}
+    ${c.ouverte && canDeclare() ? `<button class="btn primary" type="button" data-action="declare-collecte" data-id="${esc(c.id)}">${ICONS.plus}J'ai participé</button>` : ""}
+    <a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(collecteText(c))}" target="_blank" rel="noopener">${ICONS.wa}Partager sur WhatsApp</a>
+    <div class="section"><h2>Participations</h2>${rows ? `<div class="card">${rows}</div>` : `<div class="empty">Personne n'a encore participé.</div>`}</div>
+    ${canManageCollecte() ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-collecte" data-id="${esc(c.id)}">Modifier</button><button class="btn ghost" type="button" data-action="toggle-collecte" data-id="${esc(c.id)}">${c.ouverte ? "Terminer la collecte" : "Rouvrir"}</button></div>` : ""}`);
+}
+function collecteFormSheet(c){
+  openSheet(c ? "Modifier la collecte" : "Nouvelle collecte", `
+  <form id="collecte-form" class="stack" novalidate data-id="${c ? esc(c.id) : ""}">
+    <div class="field"><label for="co-titre">Pour quoi ?</label><input id="co-titre" name="titre" type="text" maxlength="200" value="${c ? esc(c.titre) : ""}" placeholder="Ex. : Rénovation de la mosquée du village"></div>
+    <div class="two"><div class="field"><label for="co-obj">Objectif</label><input id="co-obj" name="objectif" type="number" inputmode="decimal" min="1" step="1" value="${c ? esc(c.objectif) : ""}"></div>
+      <div class="field"><label for="co-dev">Monnaie</label><select id="co-dev" name="devise"><option value="EUR" ${c && c.devise === "KMF" ? "" : "selected"}>Euros (€)</option><option value="KMF" ${c && c.devise === "KMF" ? "selected" : ""}>Francs comoriens (FC)</option></select></div></div>
+    <div class="field"><label for="co-fin">Jusqu'à quand ? (facultatif)</label><input id="co-fin" name="fin" type="date" value="${c && c.fin ? esc(c.fin) : ""}"></div>
+    <div class="field"><label for="co-texte">Explication (facultatif)</label><textarea class="short" id="co-texte" name="texte" maxlength="5000" placeholder="À quoi servira l'argent, qui s'en occupe…">${c ? esc(c.texte || "") : ""}</textarea>
+      <span class="hint">Les participations en euros et en francs comoriens sont additionnées (1 € = 491,97 FC).</span></div>
+    <p class="field hint" id="co-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">${c ? "Enregistrer les changements" : "Lancer la collecte"}</button>
+  </form>`);
+}
+function submitCollecte(form){
+  const f = new FormData(form); const get = k => String(f.get(k) || "").trim();
+  const objectif = Math.round(parseFloat(get("objectif").replace(",", ".")));
+  const d = {titre:get("titre").slice(0,200), texte:get("texte").slice(0,5000), objectif, devise: get("devise") === "KMF" ? "KMF" : "EUR", fin: /^\d{4}-\d{2}-\d{2}$/.test(get("fin")) ? get("fin") : ""};
+  const err = form.querySelector("#co-error"); const bad = t => { err.textContent = t; err.hidden = false; };
+  if (!d.titre) return bad("Écris pour quoi est la collecte.");
+  if (!(objectif > 0) || objectif > 100000000) return bad("Indique l'objectif à atteindre.");
+  const id = form.dataset.id;
+  if (id){ store.updateCollecte(id, d); toast("Collecte modifiée"); closeSheet(); render(); collecteSheet(id); return; }
+  store.addCollecte({...d, ouverte:true, auteurUid:myUid(), at:todayISO, ts:Date.now()}); toast("Collecte lancée"); closeSheet(); render();
 }
 
 /* ---------- bilan du mois ---------- */
@@ -1117,15 +1199,14 @@ function openSheet(title, html, onMount){
 function closeSheet(){ document.getElementById("sheet-root").innerHTML = ""; if (sheetCleanup) sheetCleanup(); sheetCleanup = null; }
 function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2200); }
 
-function paySheet(memberId){
+function paySheet(memberId, collecteId){
   const opts = [...state.members].sort((a,b) => a.nom.localeCompare(b.nom,"fr")).map(m => `<option value="${esc(m.id)}" ${m.id===memberId?"selected":""}>${esc(m.nom)}</option>`).join("");
   const defDate = ui.tab === "cotisations" && ui.month !== curMonth ? `${ui.month}-15` : todayISO;
   openSheet("Enregistrer un mouvement", `
   <form id="pay-form" class="stack" novalidate>
     <div class="toggle" role="group" aria-label="Type"><button type="button" class="on in" data-kind="in">Entrée d'argent</button><button type="button" class="out" data-kind="out">Sortie d'argent</button></div>
     <div class="field" data-for="in"><label for="pay-member">Qui a payé ?</label><select id="pay-member" name="member">${opts}</select></div>
-    <div class="field" data-for="in"><label for="pay-cat">Pour quoi ?</label><select id="pay-cat" name="cat">
-      <option value="mensuelle">${CATS.mensuelle}</option><option value="evenement">Événement (mariage, décès…)</option><option value="don">${CATS.don}</option></select></div>
+    <div class="field" data-for="in"><label for="pay-cat">Pour quoi ?</label><select id="pay-cat" name="cat">${catOptions(collecteId)}</select></div>
     <div class="field"><label for="pay-motif" id="pay-motif-label">Précision (facultatif)</label><input id="pay-motif" name="motif" type="text" placeholder="Ex. : Grand mariage de…"></div>
     <div class="two"><div class="field"><label for="pay-amount">Montant</label><input id="pay-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${expectedOf(memberById(memberId) || [...state.members].sort((a,b) => a.nom.localeCompare(b.nom,"fr"))[0])}" required></div>
       <div class="field"><label for="pay-devise">Monnaie</label><select id="pay-devise" name="devise"><option value="EUR">Euros (€)</option><option value="KMF">Francs comoriens (FC)</option></select></div></div>
@@ -1157,7 +1238,8 @@ function submitPay(form){
   if (kind === "out" && !motif) return fail("Pour une sortie, écris à quoi l'argent a servi.");
   const devise = f.get("devise") === "KMF" ? "KMF" : "EUR";
   const p = kind === "out" ? {id:uid("p"), memberId:null, montant, devise, date, cat:"sortie", motif, par:myUid()}
-    : {id:uid("p"), memberId:String(f.get("member")), montant, devise, date, cat:String(f.get("cat")), motif: motif || CATS[String(f.get("cat"))], par:myUid()};
+    : (() => { const pc = parseCat(f.get("cat")), c = pc.collecte ? collecteById(pc.collecte) : null;
+        return {id:uid("p"), memberId:String(f.get("member")), montant, devise, date, cat:pc.cat, motif: motif || (c ? c.titre : CATS[pc.cat]), par:myUid(), ...(c ? {collecte:c.id} : {})}; })();
   store.addPayment(p); closeSheet(); render();
   toast(kind === "out" ? "Sortie enregistrée" : `Paiement de ${memberById(p.memberId).nom.split(" ")[0]} enregistré`);
 }
@@ -1316,6 +1398,15 @@ const actions = {
     resetSheet(m, code); },
   "relance"(){ relanceSheet(); },
   annonces(){ annoncesSheet(); },
+  collectes(){ collectesSheet(); },
+  collecte(d){ closeSheet(); collecteSheet(d.id); },
+  "add-collecte"(){ if (!canManageCollecte()) return; closeSheet(); collecteFormSheet(null); },
+  "edit-collecte"(d){ if (!canManageCollecte()) return; closeSheet(); collecteFormSheet(collecteById(d.id)); },
+  "toggle-collecte"(d){ const c = collecteById(d.id); if (!c || !canManageCollecte()) return;
+    if (c.ouverte && !confirm("Terminer cette collecte ? Elle ne sera plus proposée dans les paiements.")) return;
+    store.updateCollecte(c.id, {ouverte:!c.ouverte}); closeSheet(); render(); toast(c.ouverte ? "Collecte rouverte" : "Collecte terminée"); },
+  "pay-collecte"(d){ if (!canPay()) return; closeSheet(); paySheet(null, d.id); },
+  "declare-collecte"(d){ closeSheet(); declareSheet(d.id); },
   annonce(d){ closeSheet(); annonceSheet(d.id); markAnnSeen(); render(); },
   "add-annonce"(){ closeSheet(); annonceFormSheet(null); },
   "edit-annonce"(d){ closeSheet(); annonceFormSheet(state.annonces.find(x => x.id === d.id)); },
@@ -1368,6 +1459,7 @@ document.addEventListener("submit", e => {
   else if (e.target.id === "declare-form") submitDeclare(e.target);
   else if (e.target.id === "chapter-form") submitChapter(e.target);
   else if (e.target.id === "annonce-form") submitAnnonce(e.target);
+  else if (e.target.id === "collecte-form") submitCollecte(e.target);
   else if (e.target.id === "login-form") submitLogin(e.target);
   else if (e.target.id === "renew-form") submitRenew(e.target);
   else if (e.target.id === "signup-form") submitSignup(e.target);

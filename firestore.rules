@@ -164,7 +164,8 @@ service cloud.firestore {
     function validDeclaration() {
       let d = request.resource.data;
       let m = /databases/$(database)/documents/members/$(d.memberId);
-      return d.keys().hasOnly(['memberId', 'uid', 'montant', 'devise', 'date', 'cat', 'moyen', 'note', 'at'])
+      return d.keys().hasOnly(['memberId', 'uid', 'montant', 'devise', 'date', 'cat', 'moyen', 'note', 'at', 'collecte'])
+        && str(d.get('collecte', ''), 60)
         && d.uid == me() && str(d.memberId, 60) && exists(m) && get(m).data.get('uid', null) == me()
         && (d.montant is number) && d.montant > 0 && d.montant <= 10000000
         && d.devise in ['EUR', 'KMF'] && d.cat in ['mensuelle', 'evenement', 'don']
@@ -172,12 +173,12 @@ service cloud.firestore {
         && str(d.moyen, 60) && str(d.note, 200) && str(d.at, 10);
     }
 
-    // Annonces (réunion, événement, décès, collecte, information) : tout membre peut publier ;
+    // Annonces (réunion, grand mariage, wukumbi, événement, décès, collecte, information) : tout membre peut publier ;
     // seuls l'auteur et les responsables peuvent modifier ou supprimer.
     function validAnnonce() {
       let d = request.resource.data;
       return d.keys().hasOnly(['type', 'titre', 'texte', 'date', 'lieu', 'auteur', 'auteurUid', 'at', 'ts'])
-        && d.type in ['reunion', 'evenement', 'deces', 'collecte', 'info']
+        && d.type in ['reunion', 'anda', 'wukumbi', 'evenement', 'deces', 'collecte', 'info']
         && str(d.titre, 200) && d.titre.size() > 0 && str(d.get('texte', ''), 5000)
         && str(d.get('date', ''), 10) && str(d.get('lieu', ''), 200) && str(d.get('auteur', ''), 60)
         && str(d.at, 10) && d.ts is int;
@@ -188,6 +189,23 @@ service cloud.firestore {
       allow update: if hasAccess() && (resource.data.auteurUid == me() || isAdmin())
         && !changed().hasAny(['auteurUid', 'auteur', 'at', 'ts']) && validAnnonce();
       allow delete: if hasAccess() && (resource.data.auteurUid == me() || isAdmin());
+    }
+
+    // Collectes par projet : lancées et gérées par les trésoriers et les responsables.
+    // Les participations sont des paiements du registre (ledger) qui portent l'identifiant de la collecte.
+    function validCollecte() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['titre', 'texte', 'objectif', 'devise', 'fin', 'ouverte', 'auteurUid', 'at', 'ts'])
+        && str(d.titre, 200) && d.titre.size() > 0 && str(d.get('texte', ''), 5000)
+        && d.objectif is number && d.objectif > 0 && d.objectif <= 100000000
+        && d.devise in ['EUR', 'KMF'] && str(d.get('fin', ''), 10) && d.ouverte is bool
+        && str(d.at, 10) && d.ts is int;
+    }
+    match /collectes/{id} {
+      allow read: if hasAccess();
+      allow create: if (isTreasurer() || isAdmin()) && request.resource.data.auteurUid == me() && validCollecte();
+      allow update: if (isTreasurer() || isAdmin()) && !changed().hasAny(['auteurUid', 'at', 'ts']) && validCollecte();
+      allow delete: if isAdmin();
     }
 
     function validChapter() {
