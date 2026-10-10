@@ -341,7 +341,10 @@ const curMonth = mkOf(now);
 const shiftMonth = (mk, n) => { const [y,m] = mk.split("-").map(Number); return mkOf(new Date(y, m-1+n, 1)); };
 const monthLabel = mk => { const [y,m] = mk.split("-").map(Number); const s = new Intl.DateTimeFormat("fr-FR",{month:"long",year:"numeric"}).format(new Date(y,m-1,1)); return s.charAt(0).toUpperCase()+s.slice(1); };
 const monthShort = mk => { const [y,m] = mk.split("-").map(Number); return new Intl.DateTimeFormat("fr-FR",{month:"short"}).format(new Date(y,m-1,1)).replace(".",""); };
-const dateLabel = iso => { const [y,m,d] = iso.split("-").map(Number); return new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short"}).format(new Date(y,m-1,d)); };
+/* une date doit avoir la forme 2026-10-10 ; sinon on n'affiche rien (une date abîmée ne doit pas bloquer l'appli) */
+const okISO = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const yearOf = iso => okISO(iso) ? iso.slice(0,4) : "";
+const dateLabel = iso => { if (!okISO(iso)) return ""; const [y,m,d] = iso.split("-").map(Number); return new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short"}).format(new Date(y,m-1,d)); };
 const nf = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2});
 const RATE = 491.96775; /* parité fixe : 1 € = 491,96775 francs comoriens */
 const nf0 = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:0});
@@ -404,9 +407,23 @@ function seed(){
   return {members, payments, accounts, histoire, settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:["m1"], tresoriers:["m2"]}, invite:"djongo", example:true, declarations:[]};
 }
 const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], annonces:[], collectes:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false, declarations:[]});
+/* Tout ce qui vient de la base est vérifié avant l'affichage : un champ mal formé
+   (écrit à la main en dehors de l'appli) est remis à vide au lieu d'abîmer l'écran. */
+const posNum = (v, def) => typeof v === "number" && isFinite(v) && v > 0 ? v : def;
+const txt = v => typeof v === "string" ? v : "";
+const cleanPays = list => (Array.isArray(list) ? list : []).filter(p => p && typeof p === "object" && okISO(p.date) && typeof p.montant === "number" && isFinite(p.montant));
+const cleanAnnonce = a => ({...a, titre:txt(a.titre), texte:txt(a.texte), lieu:txt(a.lieu), date: okISO(a.date) ? a.date : "", at: okISO(a.at) ? a.at : ""});
+const cleanCollecte = c => ({...c, titre:txt(c.titre), texte:txt(c.texte), objectif:posNum(c.objectif, 1), devise: c.devise === "KMF" ? "KMF" : "EUR", fin: okISO(c.fin) ? c.fin : ""});
+const cleanChapter = c => ({...c, titre:txt(c.titre), texte:txt(c.texte), periode:txt(c.periode), annee: Number.isInteger(c.annee) ? c.annee : null, ajoute: okISO(c.ajoute) ? c.ajoute : ""});
+const cleanSettings = st => ({mensuelle:posNum((st || {}).mensuelle, 20), mensuelleKMF:posNum((st || {}).mensuelleKMF, 5000)});
+function cleanState(d){
+  d.payments = cleanPays(d.payments); d.settings = cleanSettings(d.settings);
+  d.annonces = (d.annonces || []).map(cleanAnnonce); d.collectes = (d.collectes || []).map(cleanCollecte); d.histoire = (d.histoire || []).map(cleanChapter);
+  return d;
+}
 function load(){
   if (ONLINE) return emptyState();
-  try { const raw = localStorage.getItem(KEY); if (raw){ const d = JSON.parse(raw); if (d && d.members && d.payments && d.roles) return d; } } catch(e){}
+  try { const raw = localStorage.getItem(KEY); if (raw){ const d = JSON.parse(raw); if (d && d.members && d.payments && d.roles) return cleanState(d); } } catch(e){}
   return seed();
 }
 function save(){ if (ONLINE) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
@@ -514,14 +531,14 @@ function fbListen(){
   const onErr = e => { console.error(e); if (e && e.code === "permission-denied"){ fbStop(); fb.status = "noaccess"; render(); } };
   const L = (ref, fn, k) => fb.unsub.push(ref.onSnapshot(snap => { fn(snap); done(k); }, onErr));
   L(fb.db.collection("members"), q => { state.members = q.docs.map(d => ({...d.data(), id:d.id})); }, "members");
-  L(fb.db.collection("ledger"), q => { state.payments = q.docs.flatMap(d => d.data().items || []); }, "ledger");
+  L(fb.db.collection("ledger"), q => { state.payments = cleanPays(q.docs.flatMap(d => d.data().items || [])); }, "ledger");
   // à part : si les règles ne sont pas encore à jour, l'application continue de marcher sans cette liste
   fb.unsub.push(fb.db.collection("declarations").onSnapshot(q => { state.declarations = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.declarations = []; }));
-  fb.unsub.push(fb.db.collection("collectes").onSnapshot(q => { state.collectes = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.collectes = []; }));
-  fb.unsub.push(fb.db.collection("annonces").onSnapshot(q => { state.annonces = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.annonces = []; }));
-  L(fb.db.collection("histoire"), q => { state.histoire = q.docs.map(d => ({...d.data(), id:d.id})); }, "histoire");
+  fb.unsub.push(fb.db.collection("collectes").onSnapshot(q => { state.collectes = q.docs.map(d => cleanCollecte({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.collectes = []; }));
+  fb.unsub.push(fb.db.collection("annonces").onSnapshot(q => { state.annonces = q.docs.map(d => cleanAnnonce({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.annonces = []; }));
+  L(fb.db.collection("histoire"), q => { state.histoire = q.docs.map(d => cleanChapter({...d.data(), id:d.id})); }, "histoire");
   L(fb.db.doc("config/roles"), d => { const r = d.data() || {}; state.roles = {admins:r.admins || [], tresoriers:r.tresoriers || []}; }, "roles");
-  L(fb.db.doc("config/settings"), d => { if (d.exists) state.settings = {mensuelle:20, mensuelleKMF:5000, ...d.data()}; }, "settings");
+  L(fb.db.doc("config/settings"), d => { if (d.exists) state.settings = cleanSettings(d.data()); }, "settings");
   L(fb.db.doc("config/invite"), d => { state.invite = (d.data() || {}).code || ""; }, "invite");
 }
 
@@ -659,7 +676,7 @@ const store = {
 };
 
 /* ---------- rendu ---------- */
-function lieuPill(m){ return `<span class="pill ${m.lieu==="comores"?"km":"dia"}">${LIEUX[m.lieu]||"Diaspora"}</span>`; }
+function lieuPill(m){ return `<span class="pill ${m.lieu==="comores"?"km":"dia"}">${m.lieu === "comores" ? LIEUX.comores : LIEUX.diaspora}</span>`; }
 const okPhoto = v => typeof v === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
 function avatar(m, cls){
   if (okPhoto(m.photo)) return `<img class="avatar ${cls||""}" src="${m.photo}" alt="" aria-hidden="true">`;
@@ -710,7 +727,7 @@ function declareSheet(collecteId){
   <form id="declare-form" class="stack" novalidate>
     <div class="notice">${ICONS.info}<span>Paie comme d'habitude, puis note-le ici. Le trésorier le confirmera et tu passeras « À jour ».</span></div>
     <div class="field"><label for="dc-cat">Pour quoi ?</label><select id="dc-cat" name="cat">${catOptions(collecteId)}</select></div>
-    <div class="two"><div class="field"><label for="dc-amount">Montant</label><input id="dc-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${expectedOf(m)}" required></div>
+    <div class="two"><div class="field"><label for="dc-amount">Montant</label><input id="dc-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(expectedOf(m))}" required></div>
       <div class="field"><label for="dc-devise">Monnaie</label><select id="dc-devise" name="devise"><option value="EUR" ${devOfMember(m)==="EUR"?"selected":""}>Euros (€)</option><option value="KMF" ${devOfMember(m)==="KMF"?"selected":""}>Francs comoriens (FC)</option></select></div></div>
     <div class="field"><label for="dc-moyen">Comment as-tu payé ?</label><select id="dc-moyen" name="moyen">${MOYENS.map(x => `<option>${esc(x)}</option>`).join("")}</select></div>
     <div class="field"><label for="dc-date">Date du paiement</label><input id="dc-date" name="date" type="date" value="${todayISO}" max="${todayISO}" required></div>
@@ -734,7 +751,7 @@ function movementItem(p){
   const m = p.memberId ? memberById(p.memberId) : null;
   const who = m ? m.nom : (isOut(p) ? "Caisse de l'igna" : "Anonyme");
   const title = isOut(p) ? p.motif : who;
-  const sub = isOut(p) ? `${CATS.sortie} · ${dateLabel(p.date)}` : `${esc(p.motif || CATS[p.cat])} · ${dateLabel(p.date)}`;
+  const sub = isOut(p) ? `${CATS.sortie} · ${dateLabel(p.date)}` : `${esc(p.motif || CATS[p.cat])} · ${esc(dateLabel(p.date))}`;
   return `<button class="item" type="button" data-action="movement" data-id="${esc(p.id)}">
     <span class="mv-icon ${isOut(p)?"out":"in"}">${isOut(p)?ICONS.up:ICONS.down}</span>
     <span class="body"><span class="name">${esc(title)}</span><span class="sub">${isOut(p) ? esc(sub) : sub}</span></span>
@@ -803,7 +820,7 @@ function renderAccueil(){
 }
 /* ---------- annonces ---------- */
 const ANN_TYPES = {reunion:"Réunion", anda:"Grand mariage (Anda)", wukumbi:"Wukumbi", evenement:"Événement", deces:"Décès", collecte:"Collecte", info:"Information"};
-const dayLabel = iso => { const [y,m,d] = iso.split("-").map(Number); const s = new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"}).format(new Date(y,m-1,d)); return s.charAt(0).toUpperCase()+s.slice(1); };
+const dayLabel = iso => { if (!okISO(iso)) return ""; const [y,m,d] = iso.split("-").map(Number); const s = new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"}).format(new Date(y,m-1,d)); return s.charAt(0).toUpperCase()+s.slice(1); };
 const seenKey = "igna-djongo-annonces-vues";
 const annSeen = () => { try { return Number(localStorage.getItem(seenKey) || 0); } catch(e){ return 0; } };
 const markAnnSeen = () => { try { localStorage.setItem(seenKey, String(Date.now())); } catch(e){} };
@@ -832,7 +849,7 @@ function annonceSheet(id){
   const au = a.auteur ? memberById(a.auteur) : null;
   openSheet(ANN_TYPES[a.type] || "Annonce", `
     <div class="card stack" style="gap:8px"><h3 style="margin:0;font-size:1.2rem">${esc(a.titre)}</h3>
-      ${a.date ? `<span><b>${esc(dayLabel(a.date))}</b> ${esc(a.date.slice(0,4))}</span>` : ""}${a.lieu ? `<span class="muted">${esc(a.lieu)}</span>` : ""}
+      ${a.date ? `<span><b>${esc(dayLabel(a.date))}</b> ${esc(yearOf(a.date))}</span>` : ""}${a.lieu ? `<span class="muted">${esc(a.lieu)}</span>` : ""}
       ${a.texte ? `<p style="margin:0;white-space:pre-wrap">${esc(a.texte)}</p>` : ""}
       <span class="muted" style="font-size:.85rem">Publié${au ? " par " + esc(au.nom) : ""} le ${esc(dateLabel(a.at))}</span></div>
     <span class="muted" style="font-size:.85rem;margin-bottom:-6px">Partager</span>
@@ -917,7 +934,7 @@ function collecteSheet(id){
     <div class="card stack" style="gap:10px">${c.texte ? `<p style="margin:0;white-space:pre-wrap">${esc(c.texte)}</p>` : ""}
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
       <span class="row-between num"><span><b>${esc(money(Math.round(collecteTotal(c)), c.devise))}</b> sur ${esc(money(c.objectif, c.devise))}</span><b>${pct} %</b></span>
-      ${c.fin ? `<span class="muted">Jusqu'au ${esc(dayLabel(c.fin).toLowerCase())} ${esc(c.fin.slice(0,4))}</span>` : ""}${c.ouverte ? "" : `<span class="pill wait" style="align-self:flex-start">Collecte terminée</span>`}</div>
+      ${c.fin ? `<span class="muted">Jusqu'au ${esc(dayLabel(c.fin).toLowerCase())} ${esc(yearOf(c.fin))}</span>` : ""}${c.ouverte ? "" : `<span class="pill wait" style="align-self:flex-start">Collecte terminée</span>`}</div>
     ${c.ouverte && canPay() ? `<button class="btn primary" type="button" data-action="pay-collecte" data-id="${esc(c.id)}">${ICONS.plus}Enregistrer une participation</button>` : ""}
     ${c.ouverte && canDeclare() ? `<button class="btn primary" type="button" data-action="declare-collecte" data-id="${esc(c.id)}">${ICONS.plus}J'ai participé</button>` : ""}
     <span class="muted" style="font-size:.85rem;margin-bottom:-6px">Partager</span>
@@ -1036,7 +1053,7 @@ function renderCotisations(){
     const ms = [...state.members].sort((a,b) => (isUpToDate(a.id,mk) - isUpToDate(b.id,mk)) || a.nom.localeCompare(b.nom,"fr"));
     body = `<div class="list">${ms.map(m => { const paid = paidMonth(m.id, mk); const up = isUpToDate(m.id, mk); const dv = devOfMember(m);
       return `<button class="item" type="button" data-action="${up || !canPay() ? "member" : "pay"}" data-id="${esc(m.id)}" data-member="${esc(m.id)}">${avatar(m)}
-        <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.famille)} · ${LIEUX[m.lieu]||"Diaspora"}</span></span>
+        <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.famille)} · ${m.lieu === "comores" ? LIEUX.comores : LIEUX.diaspora}</span></span>
         ${up ? `<span class="pill ok num">Payé ${esc(money(paid, dv))}</span>` : pendingFor(m.id, mk).length ? `<span class="pill todo">À confirmer</span>` : `<span class="pill wait">${paid ? "Partiel " + esc(money(paid, dv)) : "À payer " + esc(money(expectedOf(m), dv))}</span>`}</button>`; }).join("")}</div>`;
   } else {
     body = `<div class="list">${monthPays.map(movementItem).join("") || `<div class="empty">Aucun mouvement en ${esc(monthLabel(mk).toLowerCase())}.</div>`}</div>`;
@@ -1171,7 +1188,7 @@ function chapterSheet(id){
   const a = memberById(c.auteur);
   openSheet(c.periode || "Histoire", `
     <div class="stack" style="gap:10px"><h2 style="font-size:1.4rem">${esc(c.titre)}</h2>
-      <span class="muted" style="font-size:.85rem">${c.exemple ? `<span class="pill ex">Exemple</span> ` : ""}${a ? "Écrit par " + esc(a.nom) + " · " : ""}ajouté le ${esc(dateLabel(c.ajoute))} ${esc(c.ajoute.slice(0,4))}</span>
+      <span class="muted" style="font-size:.85rem">${c.exemple ? `<span class="pill ex">Exemple</span> ` : ""}${a ? "Écrit par " + esc(a.nom) + " · " : ""}ajouté le ${esc(dateLabel(c.ajoute))} ${esc(yearOf(c.ajoute))}</span>
       <div class="story">${esc(c.texte)}</div></div>
     ${canDeleteChapter(c) ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-chapter" data-id="${esc(c.id)}">Modifier</button><button class="btn danger" type="button" data-action="ask-delete">Supprimer</button></div>` : ""}
     <div class="confirm" id="confirm-del" hidden><span>Supprimer ce chapitre de l'histoire ?</span>
@@ -1181,7 +1198,7 @@ function chapterFormSheet(c){
   openSheet(c ? "Modifier le chapitre" : "Ajouter un chapitre", `
   <form id="chapter-form" class="stack" novalidate data-id="${c ? esc(c.id) : ""}">
     <div class="two"><div class="field"><label for="ch-periode">Quand ?</label><input id="ch-periode" name="periode" type="text" value="${c ? esc(c.periode) : ""}" placeholder="Ex. : Années 1950"></div>
-      <div class="field"><label for="ch-annee">Année (pour le classement)</label><input id="ch-annee" name="annee" type="number" inputmode="numeric" value="${c && c.annee != null ? c.annee : ""}" placeholder="Ex. : 1955"></div></div>
+      <div class="field"><label for="ch-annee">Année (pour le classement)</label><input id="ch-annee" name="annee" type="number" inputmode="numeric" value="${c && c.annee != null ? esc(c.annee) : ""}" placeholder="Ex. : 1955"></div></div>
     <div class="field"><label for="ch-titre">Titre</label><input id="ch-titre" name="titre" type="text" value="${c ? esc(c.titre) : ""}" placeholder="Ex. : Le premier grand mariage de l'igna"></div>
     <div class="field"><label for="ch-texte">Le récit</label><textarea id="ch-texte" name="texte" placeholder="Raconte ce qui s'est passé, qui était là, ce que disent les anciens…">${c ? esc(c.texte) : ""}</textarea>
       <span class="hint">Si tu ne connais pas l'année exacte, laisse la case vide : le chapitre sera placé au début.</span></div>
@@ -1242,9 +1259,9 @@ function paySheet(memberId, collecteId){
     <div class="field" data-for="in"><label for="pay-member">Qui a payé ?</label><select id="pay-member" name="member">${opts}</select></div>
     <div class="field" data-for="in"><label for="pay-cat">Pour quoi ?</label><select id="pay-cat" name="cat">${catOptions(collecteId)}</select></div>
     <div class="field"><label for="pay-motif" id="pay-motif-label">Précision (facultatif)</label><input id="pay-motif" name="motif" type="text" placeholder="Ex. : Grand mariage de…"></div>
-    <div class="two"><div class="field"><label for="pay-amount">Montant</label><input id="pay-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${expectedOf(memberById(memberId) || [...state.members].sort((a,b) => a.nom.localeCompare(b.nom,"fr"))[0])}" required></div>
+    <div class="two"><div class="field"><label for="pay-amount">Montant</label><input id="pay-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(expectedOf(memberById(memberId) || [...state.members].sort((a,b) => a.nom.localeCompare(b.nom,"fr"))[0]))}" required></div>
       <div class="field"><label for="pay-devise">Monnaie</label><select id="pay-devise" name="devise"><option value="EUR">Euros (€)</option><option value="KMF">Francs comoriens (FC)</option></select></div></div>
-    <div class="field"><label for="pay-date">Date</label><input id="pay-date" name="date" type="date" value="${defDate}" required></div>
+    <div class="field"><label for="pay-date">Date</label><input id="pay-date" name="date" type="date" value="${esc(defDate)}" required></div>
     <p class="field hint" id="pay-error" hidden style="color:var(--bad)"></p>
     <button class="btn primary" type="submit">Enregistrer</button>
   </form>`, sheet => {
@@ -1356,7 +1373,7 @@ function movementSheet(id){
       <span class="amt ${isOut(p)?"out":"in"} num" style="font-family:var(--font-display);font-size:2rem">${isOut(p)?"−":"+"}${esc(money(p.montant, devOfPay(p)))}</span>${devOfPay(p)==="KMF" ? `<span class="muted num">environ ${esc(money(Math.round(toEur(p.montant,"KMF")),"EUR"))}</span>` : ""}
       ${m ? `<span><b>${esc(m.nom)}</b> · ${esc(m.famille)}</span>` : ""}
       <span>${esc(p.motif || CATS[p.cat])}</span>
-      <span class="muted">${esc(CATS[p.cat])} · ${esc(dateLabel(p.date))} ${esc(p.date.slice(0,4))}</span>
+      <span class="muted">${esc(CATS[p.cat])} · ${esc(dateLabel(p.date))} ${esc(yearOf(p.date))}</span>
     </div>
     ${canPay() ? `<button class="btn danger" type="button" data-action="ask-delete">Supprimer ce mouvement</button>` : ""}
     <div class="confirm" id="confirm-del" hidden><span>Supprimer ce mouvement ? Le total de la caisse sera recalculé.</span>
@@ -1372,8 +1389,8 @@ function settingsSheet(){
   ${mine ? `<div class="section"><h2>Mon profil</h2><div class="list"><button class="item" type="button" data-action="my-profile">${avatar(mine)}<span class="body"><span class="name">${esc(mine.nom)}</span><span class="sub">${okPhoto(mine.photo) ? "Voir ou changer ma photo" : "Ajouter ma photo"}</span></span></button></div></div>` : ""}
   <div class="section"><h2>Cotisation mensuelle</h2>
   ${manage ? `<form id="settings-form" class="stack" novalidate>
-    <div class="two"><div class="field"><label for="set-amount">Diaspora (€)</label><input id="set-amount" name="mensuelle" type="number" inputmode="decimal" min="1" step="1" value="${state.settings.mensuelle}"></div>
-      <div class="field"><label for="set-amount-kmf">Comores (FC)</label><input id="set-amount-kmf" name="mensuelleKMF" type="number" inputmode="numeric" min="1" step="1" value="${state.settings.mensuelleKMF}"></div></div>
+    <div class="two"><div class="field"><label for="set-amount">Diaspora (€)</label><input id="set-amount" name="mensuelle" type="number" inputmode="decimal" min="1" step="1" value="${esc(state.settings.mensuelle)}"></div>
+      <div class="field"><label for="set-amount-kmf">Comores (FC)</label><input id="set-amount-kmf" name="mensuelleKMF" type="number" inputmode="numeric" min="1" step="1" value="${esc(state.settings.mensuelleKMF)}"></div></div>
     <span class="hint">Un membre est « à jour » quand il a versé au moins ce montant dans le mois.</span>
     <button class="btn primary" type="submit">Enregistrer</button>
   </form>` : `<div class="card num"><b>${esc(money(state.settings.mensuelle,"EUR"))}</b> par mois dans la diaspora, <b>${esc(money(state.settings.mensuelleKMF,"KMF"))}</b> aux Comores.</div>`}
