@@ -1,0 +1,1676 @@
+<title>Igna Djongo</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Igna Djongo">
+<meta name="theme-color" content="#0E5A4A">
+<meta name="author" content="M.M.B.T">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Layout : application une colonne pensée pour téléphone. En-tête de caisse, listes, barre d'onglets fixe en bas. */
+:root{
+  --bg:#F1F5F2; --surface:#FFFFFF; --surface-2:#E6EEE9; --ink:#13241F; --muted:#56695F; --line:#D4DED8;
+  --green:#0E5A4A; --green-2:#0A4639; --on-green:#FFFFFF; --gold:#B9820A; --gold-bright:#E9B949; --gold-soft:#F6E8C6;
+  --ok:#1D7449; --ok-soft:#DCF0E3; --warn:#9A5600; --warn-soft:#FBEAD0; --bad:#B3261E; --bad-soft:#F8DEDB;
+  --shadow:0 1px 2px rgba(19,36,31,.06),0 6px 20px rgba(19,36,31,.08);
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --radius:16px; --nav-h:68px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1411; --surface:#13201C; --surface-2:#1B2C26; --ink:#E5EEE9; --muted:#97AAA2; --line:#263830;
+  --green:#14614F; --green-2:#0F4E40; --on-green:#FFFFFF; --gold:#E5B247; --gold-bright:#F0C561; --gold-soft:#3A2F13;
+  --ok:#62C793; --ok-soft:#163627; --warn:#F1A94F; --warn-soft:#3A2A12; --bad:#F2867E; --bad-soft:#3E1C1A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0B1411; --surface:#13201C; --surface-2:#1B2C26; --ink:#E5EEE9; --muted:#97AAA2; --line:#263830;
+  --green:#14614F; --green-2:#0F4E40; --on-green:#FFFFFF; --gold:#E5B247; --gold-bright:#F0C561; --gold-soft:#3A2F13;
+  --ok:#62C793; --ok-soft:#163627; --warn:#F1A94F; --warn-soft:#3A2A12; --bad:#F2867E; --bad-soft:#3E1C1A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold-bright);outline-offset:2px;border-radius:8px}
+.app{max-width:520px;margin:0 auto;padding-inline:16px;padding-block:12px calc(var(--nav-h) + 96px)}
+html,body{overflow-x:hidden;overflow-x:clip}
+.app.swiping{will-change:transform,opacity}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+h1{font-size:1.75rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.1rem;font-weight:800}
+.eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:8px 16px}
+.topbar .titles{display:flex;flex-direction:column;gap:2px;min-width:0}
+.icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);flex:none}
+.icon-btn svg{width:22px;height:22px}
+.stack{display:flex;flex-direction:column;gap:20px}
+.section{display:flex;flex-direction:column;gap:10px}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.link{background:none;border:0;padding:4px 0;color:var(--green);font-weight:700}
+:root[data-theme="dark"] .link{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .link{color:var(--gold)}}
+
+/* Carte de la caisse : motif inspiré des broderies du kofia */
+.hero{position:relative;overflow:hidden;border-radius:22px;background:var(--green);color:var(--on-green);padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.22;
+  background-image:radial-gradient(circle at 50% 50%,var(--gold-bright) 1.6px,transparent 2.2px),radial-gradient(circle at 50% 50%,var(--gold-bright) 1px,transparent 1.5px);
+  background-size:18px 18px,18px 18px;background-position:0 0,9px 9px;
+  -webkit-mask-image:linear-gradient(115deg,transparent 35%,#000 100%);mask-image:linear-gradient(115deg,transparent 35%,#000 100%)}
+.hero > *{position:relative}
+.hero .label{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;opacity:.85}
+.hero .total{font-family:var(--font-display);font-weight:800;font-size:clamp(2.3rem,11vw,3.1rem);line-height:1;letter-spacing:-.02em}
+.hero .cash{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+.hero .cash div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hero .cash .cur{font-size:.8rem;opacity:.85}
+.hero .cash b{font-family:var(--font-display);font-weight:800;font-size:clamp(1.35rem,6.4vw,1.8rem);line-height:1.1;overflow-wrap:anywhere}
+.hero .flows{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.95rem}
+.hero .flows span{display:inline-flex;gap:6px;align-items:center}
+.hero .flows b{font-weight:700}
+.hero.tap{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s} .hero.tap:active{transform:scale(.985)}
+.hero .more{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;font-size:.88rem;font-weight:700;background:rgba(255,255,255,.16);border-radius:999px;padding:6px 10px 6px 12px}
+.hero .more svg{width:16px;height:16px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.progress{height:12px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.progress > i{display:block;height:100%;background:var(--green);border-radius:99px}
+.month-card{display:flex;flex-direction:column;gap:10px}
+.month-card .big{font-family:var(--font-display);font-size:1.35rem;font-weight:800}
+.row-between{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:8px 14px;font-size:.92rem;display:inline-flex;align-items:center;gap:8px;min-height:40px}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.unpaid{border-color:var(--warn);background:var(--warn-soft);color:var(--ink)}
+.chip.unpaid .plus{color:var(--warn);font-weight:700}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
+.chips.scroll::-webkit-scrollbar{display:none}
+.chips.scroll .chip{flex:none}
+
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;width:100%;min-height:64px}
+.item:first-child{border-top:0}
+.item .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.item .name{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .sub{font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .amt{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.amt.in{color:var(--ok)} .amt.out{color:var(--bad)}
+.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.9rem;flex:none;color:#fff;letter-spacing:.02em}
+.avatar.lg{width:72px;height:72px;font-size:1.4rem}
+img.avatar{object-fit:cover;background:var(--surface-2)}
+.mosaic{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 8px}
+@media (max-width:340px){.mosaic{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0;border:0;background:none;min-width:0;color:var(--ink);text-align:center}
+.tile .disc{position:relative;width:100%;max-width:96px;aspect-ratio:1;border-radius:50%;box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--line)}
+.tile .avatar{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;font-size:1.6rem}
+.tile .tn{width:100%;font-weight:700;font-size:.8rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tile .dot{position:absolute;right:4%;bottom:4%;width:16px;height:16px;border-radius:50%;border:2px solid var(--surface)}
+.dot.ok{background:var(--ok)} .dot.todo{background:var(--gold-bright)} .dot.wait{background:#9AA5A0}
+.view-toggle{display:flex;justify-content:flex-end}
+.view-toggle .seg{display:inline-grid;grid-template-columns:auto auto}
+.view-toggle .seg button{display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:.85rem}
+.view-toggle svg{width:16px;height:16px}
+.avatar.xl{width:120px;height:120px;font-size:2.2rem}
+.photo-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.photo-btns .btn{padding:8px 14px;min-height:0;font-size:.9rem}
+.f0{background:#0E5A4A}.f1{background:#9C5B12}.f2{background:#2F5D8A}.f3{background:#8A3B57}.f4{background:#5B6B1F}.f5{background:#6A4C93}
+.mv-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none}
+.mv-icon.in{background:var(--ok-soft);color:var(--ok)} .mv-icon.out{background:var(--bad-soft);color:var(--bad)}
+.mv-icon svg{width:20px;height:20px}
+.pill{font-size:.75rem;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.wait{background:var(--warn-soft);color:var(--warn)}
+.pill.km{background:var(--surface-2);color:var(--green)} .pill.dia{background:var(--gold-soft);color:var(--ink)}
+.pill.role{background:var(--gold-soft);color:var(--ink)}
+.pill.todo{background:var(--gold-soft);color:var(--ink)}
+.decl{display:flex;flex-direction:column;gap:10px;padding:12px 14px;border-top:1px solid var(--line)}
+.decl:first-child{border-top:0}
+.decl .row{display:flex;align-items:center;gap:12px}
+.decl .btn-row .btn{padding:8px 12px;min-height:0;font-size:.9rem}
+.quick{display:flex;gap:6px;flex:none}
+.quick a{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surface-2);color:var(--green);text-decoration:none}
+.quick a.wa{color:#1C8D4E}
+.quick a svg{width:20px;height:20px}
+.group-label{display:flex;justify-content:space-between;padding:4px 4px 0;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 12px;min-height:48px}
+.search svg{width:20px;height:20px;color:var(--muted);flex:none}
+.search input{border:0;background:transparent;flex:1;min-width:0;padding:12px 0;outline:none}
+
+.switcher{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px}
+.switcher .icon-btn{border:0;background:transparent}
+.switcher strong{font-family:var(--font-display);font-size:1.1rem}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:12px;padding:4px;gap:4px}
+.seg.three{grid-template-columns:1fr 1fr 1fr}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.split .stat{display:flex;flex-direction:column;gap:4px}
+.split .stat .bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.split .stat .bar i{display:block;height:100%;background:var(--green)}
+.split .stat.dia .bar i{background:var(--gold-bright)}
+.seg button{border:0;background:transparent;border-radius:9px;padding:10px 6px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+.chart{width:100%;height:auto;display:block}
+.chart text{font-family:var(--font-body);font-size:11px;fill:var(--muted)}
+.chart .v{fill:var(--ink);font-weight:700}
+
+.notice{display:flex;gap:10px;align-items:flex-start;font-size:.85rem;color:var(--muted);background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.notice svg{width:18px;height:18px;flex:none;margin-top:1px}
+.empty{padding:24px 16px;text-align:center;color:var(--muted)}
+
+.fab{position:fixed;z-index:20;right:max(16px,calc((100vw - 520px)/2 + 16px));bottom:calc(var(--nav-h) + 16px + env(safe-area-inset-bottom,0px));
+  display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;background:var(--gold-bright);color:#1D1607;font-weight:700;padding:14px 20px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.fab svg{width:20px;height:20px}
+
+nav.tabs{position:fixed;z-index:30;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs .inner{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:var(--nav-h)}
+nav.tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.78rem;font-weight:700;color:var(--muted)}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button.on{color:var(--green)}
+nav.tabs button.on .ic{background:var(--surface-2)}
+nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radius:99px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) nav.tabs button.on{color:var(--gold)}}
+:root[data-theme="dark"] nav.tabs button.on{color:var(--gold)}
+
+/* Feuilles (formulaires et fiches) */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(5,12,10,.5);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:520px;max-height:92%;overflow-y:auto;border-radius:22px 22px 0 0;padding-inline:16px;padding-block:10px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.grabber{width:40px;height:5px;border-radius:99px;background:var(--line);align-self:center}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700;font-size:.9rem}
+.field input,.field select{width:100%;min-height:50px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:10px 12px}
+.field .hint{font-size:.8rem;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{border:0;border-radius:14px;padding:15px 18px;font-weight:700;min-height:52px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.primary{background:var(--green);color:var(--on-green)}
+.btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:var(--bad-soft);color:var(--bad)}
+.btn.wa{background:#1C8D4E;color:#fff}
+.btn.fb{background:#1877F2;color:#fff}
+.btn svg{width:20px;height:20px}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toggle button{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;font-weight:700}
+.toggle button.on.in{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.toggle button.on.out{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.profile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.phone-line{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px}
+.phone-line span{user-select:all;font-variant-numeric:tabular-nums;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{display:block;font-family:var(--font-display);font-size:1.3rem}
+.confirm{display:flex;flex-direction:column;gap:10px;background:var(--bad-soft);border-radius:14px;padding:12px}
+
+.auth{display:flex;flex-direction:column;gap:18px;padding-top:8px}
+.auth .hero{gap:8px}
+.auth .hero h1{color:var(--on-green);font-size:2rem}
+.auth .hero p{margin:0;opacity:.9}
+.demo{font-size:.85rem;color:var(--muted);background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.demo b{color:var(--ink);font-variant-numeric:tabular-nums}
+.pin{letter-spacing:.5em;font-variant-numeric:tabular-nums;font-weight:700}
+.timeline{position:relative;display:flex;flex-direction:column;gap:14px;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:var(--line);border-radius:2px}
+.chapter{position:relative;display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;color:inherit}
+.chapter::before{content:"";position:absolute;left:-25px;top:18px;width:14px;height:14px;border-radius:50%;background:var(--gold-bright);border:3px solid var(--bg)}
+.chapter .periode{font-family:var(--font-display);font-weight:800;color:var(--green);font-size:1rem}
+.chapter h3{font-size:1.15rem}
+.chapter .excerpt{color:var(--ink);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.chapter .by{font-size:.8rem;color:var(--muted)}
+.pill.ex{background:var(--warn-soft);color:var(--warn)}
+.annonce{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:var(--radius);padding:12px 14px;color:inherit;font:inherit}
+.annonce.deces{border-left-color:var(--muted)} .annonce.anda,.annonce.wukumbi{border-left-color:var(--gold-bright)}
+.collecte{display:flex;flex-direction:column;gap:8px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;color:inherit;font:inherit}
+.collecte h3{margin:0;font-size:1rem} .collecte .row-between{font-size:.9rem}
+.collecte.closed{opacity:.75} .annonce.reunion{border-left-color:var(--green)}
+.annonce h3{margin:0;font-size:1rem} .annonce .excerpt{color:var(--muted);font-size:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.annonce .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.85rem;color:var(--muted)}
+.pill.new{background:var(--green);color:#fff}
+.tile2{text-align:left;color:inherit;font:inherit;gap:6px!important;min-height:132px}
+.tile2 .eyebrow{display:flex;align-items:center;gap:6px} .tile2 .eyebrow .pill{font-size:.7rem;padding:1px 7px}
+.tile2 .t{font-size:.95rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile2 .s{font-size:.8rem} .tile2 .go{margin-top:auto;font-size:.8rem;font-weight:700;color:var(--green)}
+:root[data-theme="dark"] .tile2 .go{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tile2 .go{color:var(--gold)}}
+.bilan-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)} .bilan-row:last-child{border-bottom:0}
+.bilan-row b{text-align:right}
+.field textarea.short{min-height:110px}
+@media print{body{background:#fff} .app,.fab,nav.tabs,.toast,.no-print{display:none!important}
+  .overlay{position:static;background:none;display:block} .sheet{max-height:none;overflow:visible;box-shadow:none;animation:none;max-width:none;border-radius:0}
+  .grabber,.sheet-head .icon-btn{display:none}}
+.story{white-space:pre-line;font-size:1.05rem;line-height:1.6;max-width:65ch}
+.field textarea{width:100%;min-height:200px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px;font:inherit;line-height:1.5;resize:vertical}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chapter .periode{color:var(--gold)}}
+:root[data-theme="dark"] .chapter .periode{color:var(--gold)}
+.signature{text-align:center;font-size:.75rem;color:var(--muted);padding:24px 0 8px;letter-spacing:.05em}
+.signature button{font:inherit;color:inherit;background:none;border:0;padding:6px 4px;margin:-6px 0;text-decoration:underline;cursor:pointer;letter-spacing:inherit}
+.licence-text{white-space:pre-line;line-height:1.55;font-size:.92rem;margin:0}
+.legal{line-height:1.55;font-size:.92rem}
+.hint .link{font:inherit;font-weight:700;padding:0}
+.legal h3{font-size:1rem;margin:16px 0 4px}
+.legal p{margin:0 0 8px}
+.toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+</style>
+
+<div class="app" id="view" aria-live="polite"></div>
+<button class="fab" id="fab" type="button"></button>
+<nav class="tabs" id="tabs" aria-label="Navigation">
+  <div class="inner">
+    <button type="button" data-tab="accueil"><span class="ic" data-icon="home"></span>Caisse</button>
+    <button type="button" data-tab="membres"><span class="ic" data-icon="users"></span>Membres</button>
+    <button type="button" data-tab="cotisations"><span class="ic" data-icon="wallet"></span>Cotisations</button>
+    <button type="button" data-tab="histoire"><span class="ic" data-icon="book"></span>Histoire</button>
+  </div>
+</nav>
+<div id="sheet-root"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* Base de données en ligne (Firebase). Mettre null pour revenir au mode démonstration
+   (données d'exemple gardées sur le téléphone). */
+window.IGNA_FIREBASE = {
+  apiKey: "AIzaSyAh8Kye5qIrU3wANgNWDnvJ0LnDgGw3qpE",
+  authDomain: "igna-djongo.firebaseapp.com",
+  projectId: "igna-djongo",
+  storageBucket: "igna-djongo.firebasestorage.app",
+  messagingSenderId: "846075545055",
+  appId: "1:846075545055:web:7dfa9dc4007efde23b306a"
+};
+</script>
+<script>
+// Appli « Igna Djongo », conçue par M.M.B.T (2026). Tous droits réservés.
+(function(){
+"use strict";
+const SIGNATURE = `<footer class="signature">Conçue par M.M.B.T · 2026 · <button type="button" data-action="licence">Licence</button> · <button type="button" data-action="confidentialite">Confidentialité</button> · <button type="button" data-action="cgu">CGU</button></footer>`;
+const LICENCE_TEXT = `Igna Djongo
+Copyright (c) 2026 M.M.B.T. Tous droits réservés.
+
+Ce logiciel (code, pages et textes) est la propriété de son auteur, MAABADI BEN TAMOU Mohamed.
+Toute copie, modification, diffusion ou réutilisation, totale ou partielle, est interdite sans l'accord écrit de l'auteur.
+
+Le SDK Firebase et les polices Google Fonts, chargés depuis leurs sites, restent sous leurs propres licences.`;
+const CONFIDENTIALITE_HTML = `<div class="legal">
+<p>Mise à jour : 11 octobre 2026.</p>
+<h3>Qui est responsable ?</h3>
+<p>L'application est utilisée par l'Igna Djongo pour gérer ses membres, ses cotisations, sa caisse et son histoire. Elle a été conçue par MAABADI BEN TAMOU Mohamed (M.M.B.T). Pour toute question sur tes données, adresse-toi au bureau de l'igna (président ou trésorier) ou écris à l'auteur de l'appli : <a href="mailto:kalmache1@gmail.com">kalmache1@gmail.com</a>.</p>
+<h3>Quelles données ?</h3>
+<p>Quand tu crées ton compte ou qu'un responsable t'ajoute : ton nom, ton numéro de téléphone, ta famille, ta ville et si tu vis aux Comores ou dans la diaspora, ainsi que ton rôle dans l'igna. Ensuite : les paiements et les mouvements de caisse enregistrés à ton nom, les paiements que tu déclares, et les textes que tu ajoutes (annonces, chapitres de l'histoire).</p>
+<p>Ton code secret n'est jamais stocké en clair : il sert seulement à te connecter.</p>
+<h3>Pourquoi ?</h3>
+<p>Uniquement pour faire vivre l'igna : savoir qui en fait partie, pouvoir se joindre, suivre les cotisations et la caisse, garder notre histoire. Les données ne sont ni vendues, ni louées, ni utilisées pour de la publicité. Cette utilisation repose sur l'intérêt légitime de l'igna à gérer ses membres et sur ton inscription volontaire.</p>
+<h3>Qui les voit ?</h3>
+<p>Seulement les membres connectés, qui ont reçu le code de l'igna. Seuls les responsables (président, trésorier) peuvent ajouter, modifier ou retirer des membres et des mouvements de caisse. Personne en dehors de l'igna n'y a accès.</p>
+<h3>Où sont-elles gardées ?</h3>
+<p>Dans la base Firebase de Google, qui gère aussi la connexion. Les pages de l'appli sont publiées par GitHub Pages et les polices d'écriture viennent de Google Fonts ; ces services voient l'adresse internet de ton téléphone quand tu ouvres l'appli. Ils peuvent traiter des données hors de l'Union européenne, avec les garanties prévues par le RGPD. Sur ton téléphone, l'appli garde seulement quelques réglages d'affichage.</p>
+<h3>Combien de temps ?</h3>
+<p>Tant que tu es membre de l'igna. Si tu quittes l'igna, un responsable peut te retirer de la liste, et tes informations sont alors effacées. Les mouvements de caisse peuvent être gardés pour que les comptes de l'igna restent justes.</p>
+<h3>Tes droits</h3>
+<p>Tu peux consulter, corriger ou faire effacer tes données, et t'opposer à leur utilisation, en le demandant au bureau de l'igna ou en écrivant à <a href="mailto:kalmache1@gmail.com">kalmache1@gmail.com</a>. Si tu penses que tes droits ne sont pas respectés, tu peux te plaindre auprès de la CNIL (cnil.fr).</p>
+</div>`;
+const CGU_HTML = `<div class="legal">
+<p>Mise à jour : 11 octobre 2026.</p>
+<h3>À quoi sert l'appli</h3>
+<p>L'appli Igna Djongo est réservée aux membres de l'Igna Djongo. Elle permet de voir les membres, de suivre les cotisations et la caisse, et de partager l'histoire de l'igna. Elle est gratuite.</p>
+<h3>Accès</h3>
+<p>Pour créer un compte, il faut le code de l'igna, donné sur le groupe WhatsApp. Ton code secret est personnel : ne le donne à personne. En cas d'oubli, un responsable peut te donner un nouveau code.</p>
+<h3>Ce que tu t'engages à faire</h3>
+<p>Donner des informations exactes, utiliser les numéros et informations des autres membres seulement pour la vie de l'igna, ne rien publier d'insultant, de faux ou qui ne concerne pas l'igna, et ne pas essayer d'accéder à ce qui ne t'est pas ouvert.</p>
+<h3>Rôle des responsables</h3>
+<p>Le bureau de l'igna (président, trésorier) gère les membres et la caisse. Il peut retirer un membre ou un contenu qui ne respecte pas ces règles.</p>
+<h3>Limites</h3>
+<p>L'appli est fournie telle quelle. Elle peut parfois être indisponible ou contenir des erreurs ; les comptes officiels restent ceux validés par le bureau. L'auteur ne peut pas être tenu responsable d'une perte de données ou d'un mauvais usage par un membre.</p>
+<h3>Propriété</h3>
+<p>Le code, les pages et les textes de l'appli appartiennent à leur auteur, MAABADI BEN TAMOU Mohamed (voir Licence). Les contenus ajoutés par les membres restent les leurs ; ils autorisent l'igna à les afficher dans l'appli.</p>
+<h3>Changements</h3>
+<p>Ces conditions peuvent évoluer ; la date en haut indique la dernière version. Continuer à utiliser l'appli vaut accord avec la version en cours.</p>
+</div>`;
+const KEY = "igna-djongo-maquette-v3";
+const CFG = window.IGNA_FIREBASE && window.IGNA_FIREBASE.apiKey ? window.IGNA_FIREBASE : null;
+const ONLINE = !!CFG;
+const ICONS = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.8c2 .7 3.2 2.4 3.5 5.2"/></svg>',
+  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/><path d="M16 13.5h4"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
+  fb:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 8.5V6.8c0-.8.2-1.3 1.4-1.3H17V2.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v1.9H8v3.2h2.6V21H14v-9.3h2.6l.4-3.2z"/></svg>',
+  wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5 5 16a8.5 8.5 0 1 1 3.2 3.2z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+  right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/></svg>',
+  liste:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>',
+  mosaique:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'
+};
+const CATS = {mensuelle:"Cotisation mensuelle", evenement:"Événement", don:"Don", sortie:"Sortie de caisse"};
+const LIEUX = {comores:"Comores", diaspora:"Diaspora"};
+const lieuGuess = tel => String(tel).replace(/\s/g,"").startsWith("+269") ? "comores" : "diaspora";
+const ROLES = ["Membre","Président","Vice-président","Trésorier","Trésorière","Secrétaire","Notable"];
+
+/* ---------- utilitaires ---------- */
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const now = new Date();
+const todayISO = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+const mkOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+const curMonth = mkOf(now);
+const shiftMonth = (mk, n) => { const [y,m] = mk.split("-").map(Number); return mkOf(new Date(y, m-1+n, 1)); };
+const monthLabel = mk => { const [y,m] = mk.split("-").map(Number); const s = new Intl.DateTimeFormat("fr-FR",{month:"long",year:"numeric"}).format(new Date(y,m-1,1)); return s.charAt(0).toUpperCase()+s.slice(1); };
+const monthShort = mk => { const [y,m] = mk.split("-").map(Number); return new Intl.DateTimeFormat("fr-FR",{month:"short"}).format(new Date(y,m-1,1)).replace(".",""); };
+/* une date doit avoir la forme 2026-10-10 ; sinon on n'affiche rien (une date abîmée ne doit pas bloquer l'appli) */
+const okISO = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+const yearOf = iso => okISO(iso) ? iso.slice(0,4) : "";
+const dateLabel = iso => { if (!okISO(iso)) return ""; const [y,m,d] = iso.split("-").map(Number); return new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short"}).format(new Date(y,m-1,d)); };
+const nf = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2});
+const RATE = 491.96775; /* parité fixe : 1 € = 491,96775 francs comoriens */
+const nf0 = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:0});
+const money = (n, dev) => (n < 0 ? "−" : "") + (dev === "KMF" ? nf0.format(Math.abs(n)) + " FC" : nf.format(Math.abs(n)) + " €");
+const toEur = (n, dev) => dev === "KMF" ? n / RATE : n;
+const convert = (n, from, to) => from === to ? n : to === "KMF" ? n * RATE : n / RATE;
+/* montants par devise -> texte « 180 € + 15 000 FC » */
+const bag = () => ({EUR:0, KMF:0});
+const multi = b => { const parts = []; if (b.EUR || !b.KMF) parts.push(money(b.EUR, "EUR")); if (b.KMF) parts.push(money(b.KMF, "KMF")); return parts.join(" + "); };
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const initials = name => name.split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join("");
+const waNumber = tel => { let d = String(tel).replace(/\D/g,""); if (d.startsWith("00")) d = d.slice(2); else if (d.length === 10 && d.startsWith("0")) d = "33" + d.slice(1); return d; };
+const telHref = tel => "tel:" + String(tel).replace(/[^\d+]/g,"");
+
+/* ---------- données d'exemple ---------- */
+function seed(){
+  let s = 20261006;
+  const rnd = () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const M = [
+    ["Said Mohamed Djongo","Famille Mzé Ali","Marseille","+33 6 00 00 00 01","Président"],
+    ["Fatima Said","Famille Mzé Ali","Marseille","+33 6 00 00 00 02","Trésorière"],
+    ["Ahmed Mzé Ali","Famille Mzé Ali","Moroni","+269 300 00 03","Membre"],
+    ["Zalhata Ahmed","Famille Mzé Ali","Paris","+33 6 00 00 00 04","Membre"],
+    ["Abdallah Hassani","Famille Said Hassani","Marseille","+33 6 00 00 00 05","Secrétaire"],
+    ["Moinecha Hassani","Famille Said Hassani","Lyon","+33 6 00 00 00 06","Membre"],
+    ["Ibrahim Said Hassani","Famille Said Hassani","Mitsamiouli","+269 300 00 07","Membre"],
+    ["Halima Boina","Famille Boina","Paris","+33 6 00 00 00 08","Membre"],
+    ["Djaanfar Boina","Famille Boina","Marseille","+33 6 00 00 00 09","Notable"],
+    ["Nourou Boina","Famille Boina","Moroni","+269 300 00 10","Membre"],
+    ["Mariama Mbaé","Famille Mbaé","Marseille","+33 6 00 00 00 11","Membre"],
+    ["Youssouf Mbaé","Famille Mbaé","Dunkerque","+33 6 00 00 00 12","Membre"],
+    ["Anrifa Mbaé","Famille Mbaé","Nice","+33 6 00 00 00 13","Membre"],
+    ["Soilihi Mbaé","Famille Mbaé","Foumbouni","+269 300 00 14","Membre"]
+  ];
+  const members = M.map((r,i) => ({id:"m"+(i+1), uid:"m"+(i+1), nom:r[0], famille:r[1], ville:r[2], tel:r[3], telKey:waNumber(r[3]), role:r[4], lieu:lieuGuess(r[3])}));
+  const payments = [];
+  const devOf = id => { const m = members.find(x => x.id === id); return m && m.lieu === "comores" ? "KMF" : "EUR"; };
+  const add = (memberId, montant, mk, day, cat, motif, devise) => payments.push({id:uid("p"), memberId, montant, devise: devise || devOf(memberId), date:`${mk}-${pad(day)}`, cat, motif});
+  const amountOf = m => m.lieu === "comores" ? 5000 : 20;
+  for (let off = -5; off <= 0; off++){
+    const mk = shiftMonth(curMonth, off);
+    members.forEach(m => {
+      if (off < 0){ if (rnd() < 0.86) add(m.id, amountOf(m), mk, 1 + Math.floor(rnd()*27), "mensuelle", CATS.mensuelle); }
+      else if (rnd() < 0.5){ add(m.id, amountOf(m), mk, 1 + Math.floor(rnd()*Math.max(1, now.getDate())), "mensuelle", CATS.mensuelle); }
+    });
+  }
+  const mk3 = shiftMonth(curMonth,-3), mk2 = shiftMonth(curMonth,-2), mk1 = shiftMonth(curMonth,-1);
+  ["m1","m2","m3","m5","m6","m8","m9","m11","m12"].forEach((id,i) => add(id, devOf(id) === "KMF" ? 25000 : 50, mk3, 3 + i, "evenement", "Grand mariage d'Ibrahim"));
+  add(null, 400, mk3, 20, "sortie", "Participation au grand mariage d'Ibrahim", "EUR");
+  add(null, 50000, mk2, 14, "sortie", "Soutien décès, famille Boina (Moroni)", "KMF");
+  add("m1", 100, mk1, 9, "don", "Don pour la caisse");
+  add(null, 85, mk1, 22, "sortie", "Location de salle, réunion annuelle", "EUR");
+  payments.sort((a,b) => b.date.localeCompare(a.date));
+  const accounts = members.map(m => ({memberId:m.id, pin:"1234"}));
+  const histoire = [
+    {id:uid("h"), periode:"Les origines", annee:null, ordre:1, titre:"D'où vient le nom Igna Djongo", texte:"Exemple à remplacer. Racontez ici l'origine du nom de l'Igna Djongo, l'ancêtre ou le lieu dont il vient, et ce que les anciens en disent.", auteur:"m1", auteurUid:"m1", ajoute:todayISO, exemple:true},
+    {id:uid("h"), periode:"Années 1970", annee:1970, ordre:2, titre:"Les premiers départs vers la France", texte:"Exemple à remplacer. Qui est parti en premier, vers quelle ville, et comment le lien avec le village a été gardé.", auteur:"m5", auteurUid:"m5", ajoute:todayISO, exemple:true},
+    {id:uid("h"), periode:"Aujourd'hui", annee:2026, ordre:3, titre:"L'Igna Djongo rassemblée dans une application", texte:"Exemple à remplacer. Les membres aux Comores et dans la diaspora se retrouvent dans un même outil pour se connaître et suivre la caisse.", auteur:"m2", auteurUid:"m2", ajoute:todayISO, exemple:true}
+  ];
+  return {members, payments, accounts, histoire, settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:["m1"], tresoriers:["m2"]}, invite:"djongo", example:true, declarations:[]};
+}
+const emptyState = () => ({members:[], payments:[], accounts:[], histoire:[], annonces:[], collectes:[], settings:{mensuelle:20, mensuelleKMF:5000}, roles:{admins:[], tresoriers:[]}, invite:"", example:false, declarations:[]});
+/* Tout ce qui vient de la base est vérifié avant l'affichage : un champ mal formé
+   (écrit à la main en dehors de l'appli) est remis à vide au lieu d'abîmer l'écran. */
+const posNum = (v, def) => typeof v === "number" && isFinite(v) && v > 0 ? v : def;
+const txt = v => typeof v === "string" ? v : "";
+const cleanPays = list => (Array.isArray(list) ? list : []).filter(p => p && typeof p === "object" && okISO(p.date) && typeof p.montant === "number" && isFinite(p.montant));
+const cleanAnnonce = a => ({...a, titre:txt(a.titre), texte:txt(a.texte), lieu:txt(a.lieu), date: okISO(a.date) ? a.date : "", at: okISO(a.at) ? a.at : ""});
+const cleanCollecte = c => ({...c, titre:txt(c.titre), texte:txt(c.texte), objectif:posNum(c.objectif, 1), devise: c.devise === "KMF" ? "KMF" : "EUR", fin: okISO(c.fin) ? c.fin : ""});
+const cleanChapter = c => ({...c, titre:txt(c.titre), texte:txt(c.texte), periode:txt(c.periode), annee: Number.isInteger(c.annee) ? c.annee : null, ajoute: okISO(c.ajoute) ? c.ajoute : ""});
+const cleanSettings = st => ({mensuelle:posNum((st || {}).mensuelle, 20), mensuelleKMF:posNum((st || {}).mensuelleKMF, 5000)});
+function cleanState(d){
+  d.payments = cleanPays(d.payments); d.settings = cleanSettings(d.settings);
+  d.annonces = (d.annonces || []).map(cleanAnnonce); d.collectes = (d.collectes || []).map(cleanCollecte); d.histoire = (d.histoire || []).map(cleanChapter);
+  return d;
+}
+function load(){
+  if (ONLINE) return emptyState();
+  try { const raw = localStorage.getItem(KEY); if (raw){ const d = JSON.parse(raw); if (d && d.members && d.payments && d.roles) return cleanState(d); } } catch(e){}
+  return seed();
+}
+function save(){ if (ONLINE) return; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+let state = load(); if (!state.declarations) state.declarations = []; if (!state.annonces) state.annonces = []; if (!state.collectes) state.collectes = [];
+const SKEY = "igna-djongo-session";
+let sessionId = null; if (!ONLINE){ try { sessionId = localStorage.getItem(SKEY); } catch(e){} }
+const setSession = id => { sessionId = id; if (ONLINE) return; try { id ? localStorage.setItem(SKEY, id) : localStorage.removeItem(SKEY); } catch(e){} };
+/* myUid : l'identifiant du compte connecté (en démo, l'id du membre) */
+const myUid = () => ONLINE ? sessionId : (sessionId && state.accounts.some(a => a.memberId === sessionId) ? sessionId : null);
+const me = () => { const u = myUid(); return u ? state.members.find(m => m.uid === u) || null : null; };
+const isAdmin = () => !!myUid() && state.roles.admins.includes(myUid());
+const canPay = () => !!myUid() && state.roles.tresoriers.includes(myUid());
+const canEditMember = m => isAdmin() || canPay() || (m && m.uid && m.uid === myUid());
+const canDeleteChapter = c => isAdmin() || (c && c.auteurUid && c.auteurUid === myUid());
+const samePhone = (a, b) => waNumber(a) === waNumber(b) && waNumber(a).length >= 6;
+let authMode = "login";
+const ui = {tab:"accueil", month:curMonth, cotView:"membres", q:"", fam:"all", lieu:"all", vue:"liste"};
+try { if (localStorage.getItem("igna-djongo-vue") === "mosaique") ui.vue = "mosaique"; } catch(e){}
+
+/* ---------- calculs ---------- */
+const memberById = id => state.members.find(m => m.id === id);
+const families = () => [...new Set(state.members.map(m => m.famille))].sort((a,b) => a.localeCompare(b,"fr"));
+const famClass = f => "f" + (families().indexOf(f) % 6 + 6) % 6;
+const isOut = p => p.cat === "sortie";
+const signed = p => isOut(p) ? -p.montant : p.montant;
+const devOfPay = p => p.devise === "KMF" ? "KMF" : "EUR";
+const devOfMember = m => m && m.lieu === "comores" ? "KMF" : "EUR";
+const expectedOf = m => devOfMember(m) === "KMF" ? state.settings.mensuelleKMF : state.settings.mensuelle;
+const sumBag = list => list.reduce((b,p) => { b[devOfPay(p)] += p.montant; return b; }, bag());
+const totals = () => { const inn = sumBag(state.payments.filter(p => !isOut(p))), out = sumBag(state.payments.filter(isOut));
+  const cash = {EUR: inn.EUR - out.EUR, KMF: inn.KMF - out.KMF}; return {inn, out, cash, eur: cash.EUR + toEur(cash.KMF, "KMF")}; };
+const paidMonth = (id, mk) => { const m = memberById(id); const dev = devOfMember(m);
+  return state.payments.filter(p => p.memberId === id && p.cat === "mensuelle" && p.date.startsWith(mk)).reduce((s,p) => s + convert(p.montant, devOfPay(p), dev), 0); };
+const isUpToDate = (id, mk) => paidMonth(id, mk) >= expectedOf(memberById(id)) - 0.01;
+const monthIn = mk => state.payments.filter(p => !isOut(p) && p.date.startsWith(mk)).reduce((s,p) => s + toEur(p.montant, devOfPay(p)), 0);
+const sortedPayments = () => [...state.payments].sort((a,b) => b.date.localeCompare(a.date) || 0);
+
+
+/* ---------- stockage : démo sur le téléphone, ou base en ligne Firebase ---------- */
+const fb = {status: ONLINE ? "init" : "local", db:null, auth:null, unsub:[], loaded:{}, signingUp:false};
+const SDK = "https://cdn.jsdelivr.net/npm/firebase@12.19.0/";
+const loadScript = src => new Promise((ok, ko) => { const t = document.createElement("script"); t.src = src; t.onload = ok; t.onerror = ko; document.head.appendChild(t); });
+// après un « code oublié », le compte devient « numéro-rN@… » (N lu dans comptes/{numéro})
+const emailOf = (tel, n) => waNumber(tel) + (n ? "-r" + n : "") + "@igna-djongo.app";
+const accountN = async tel => { const d = await fb.db.doc("comptes/" + waNumber(tel)).get(); return d.exists ? (d.data().n || 0) : 0; };
+const appUrl = () => location.origin + location.pathname;
+/* Facebook ne reprend que le lien : le texte est copié avant, il suffit de le coller dans la publication */
+const fbBtn = text => `<a class="btn fb" href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl())}" target="_blank" rel="noopener" data-action="fb-share" data-text="${esc(text.replace(/\*/g, ""))}">${ICONS.fb}Facebook</a>`;
+const newResetCode = () => { const a = new Uint32Array(1); crypto.getRandomValues(a); return String(100000 + a[0] % 900000); };
+const pwdOf = pin => "igna-djongo-" + pin;
+const FV = () => firebase.firestore.FieldValue;
+const cleanCode = c => String(c || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+const validCode = c => /^[a-z0-9_-]{4,30}$/.test(c);
+const fail = e => { console.error(e); toast(e && e.code === "permission-denied" ? "Tu n'as pas le droit de faire ça." : "Pas de connexion : réessaie plus tard."); };
+const authMsg = e => { const c = (e && e.code) || "";
+  if (c === "auth/too-many-requests") return "Trop d'essais. Attends quelques minutes puis réessaie.";
+  if (c === "auth/network-request-failed") return "Pas de connexion internet. Réessaie.";
+  if (c === "auth/email-already-in-use") return "Ce numéro a déjà un compte. Connecte-toi.";
+  if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found","auth/invalid-login-credentials","auth/invalid-email"].includes(c)) return "Numéro ou code incorrect.";
+  return "Une erreur est survenue. Réessaie."; };
+
+async function fbInit(){
+  try {
+    const base = CFG.sdk || SDK;
+    await loadScript(base + "firebase-app-compat.js");
+    await Promise.all([loadScript(base + "firebase-auth-compat.js"), loadScript(base + "firebase-firestore-compat.js")]);
+    firebase.initializeApp(CFG);
+    fb.auth = firebase.auth(); fb.db = firebase.firestore();
+    if (CFG.emulator){ fb.auth.useEmulator("http://" + CFG.emulator + ":9099", {disableWarnings:true}); fb.db.useEmulator(CFG.emulator, 8080); }
+    else fb.db.enablePersistence({synchronizeTabs:true}).catch(() => {});
+  } catch(e){ console.error(e); fb.status = "error"; render(); return; }
+  fb.auth.onAuthStateChanged(u => { if (fb.signingUp) return; u ? fbEnter(u.uid) : fbLeave(); });
+}
+function fbStop(){ fb.unsub.forEach(f => f()); fb.unsub = []; fb.loaded = {}; }
+function fbLeave(){ const was = fb.status; fbStop(); setSession(null); state = emptyState(); fb.status = "out"; if (was !== "out") render(); }
+async function fbEnter(u){
+  fbStop(); setSession(u); fb.status = "loading"; render();
+  let ok = true;
+  try { ok = (await fb.db.doc("access/" + u).get()).exists; } catch(e){ /* hors ligne : on essaie avec ce qui est gardé sur le téléphone */ }
+  if (!ok){ fb.status = "noaccess"; render(); return; }
+  const r = /^(\d+)-r\d+@/.exec((fb.auth.currentUser || {}).email || "");
+  if (r) await finishRenew(u, r[1]);
+  fbListen();
+}
+function liveRender(){
+  if (document.activeElement && document.activeElement.id === "search-members" && ui.tab === "membres" && fb.status === "in"){ document.getElementById("member-list").innerHTML = memberListHTML(); return; }
+  render();
+}
+/* Nouveau compte après un « code oublié » : on le relie à sa fiche, il reprend les rôles de l'ancien,
+   puis le code de réinitialisation est effacé. Sans effet si c'est déjà fait. */
+async function finishRenew(u, tel){
+  try {
+    const rs = await fb.db.doc("resets/" + tel).get(); if (!rs.exists) return;
+    const r = rs.data(); const b = fb.db.batch();
+    const mem = await fb.db.doc("members/" + r.member).get();
+    if (mem.exists && !mem.data().uid) b.update(mem.ref, {uid:u});
+    const ro = (await fb.db.doc("config/roles").get()).data() || {admins:[], tresoriers:[]};
+    const sw = l => (l || []).includes(r.old) ? l.filter(x => x !== r.old).concat([u]) : (l || []);
+    if (r.old && ((ro.admins || []).includes(r.old) || (ro.tresoriers || []).includes(r.old))) b.update(fb.db.doc("config/roles"), {admins:sw(ro.admins), tresoriers:sw(ro.tresoriers)});
+    b.delete(rs.ref); await b.commit();
+  } catch(e){ console.error(e); }
+}
+function fbListen(){
+  const done = k => { fb.loaded[k] = true; if (fb.status === "loading" && ["members","ledger","roles"].every(x => fb.loaded[x])) fb.status = "in"; if (fb.status === "in") liveRender(); };
+  const onErr = e => { console.error(e); if (e && e.code === "permission-denied"){ fbStop(); fb.status = "noaccess"; render(); } };
+  const L = (ref, fn, k) => fb.unsub.push(ref.onSnapshot(snap => { fn(snap); done(k); }, onErr));
+  L(fb.db.collection("members"), q => { state.members = q.docs.map(d => ({...d.data(), id:d.id})); }, "members");
+  L(fb.db.collection("ledger"), q => { state.payments = cleanPays(q.docs.flatMap(d => d.data().items || [])); }, "ledger");
+  // à part : si les règles ne sont pas encore à jour, l'application continue de marcher sans cette liste
+  fb.unsub.push(fb.db.collection("declarations").onSnapshot(q => { state.declarations = q.docs.map(d => ({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.declarations = []; }));
+  fb.unsub.push(fb.db.collection("collectes").onSnapshot(q => { state.collectes = q.docs.map(d => cleanCollecte({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.collectes = []; }));
+  fb.unsub.push(fb.db.collection("annonces").onSnapshot(q => { state.annonces = q.docs.map(d => cleanAnnonce({...d.data(), id:d.id})); if (fb.status === "in") liveRender(); }, e => { console.warn(e); state.annonces = []; }));
+  L(fb.db.collection("histoire"), q => { state.histoire = q.docs.map(d => cleanChapter({...d.data(), id:d.id})); }, "histoire");
+  L(fb.db.doc("config/roles"), d => { const r = d.data() || {}; state.roles = {admins:r.admins || [], tresoriers:r.tresoriers || []}; }, "roles");
+  L(fb.db.doc("config/settings"), d => { if (d.exists) state.settings = cleanSettings(d.data()); }, "settings");
+  L(fb.db.doc("config/invite"), d => { state.invite = (d.data() || {}).code || ""; }, "invite");
+}
+
+/* Chaque écriture : en démo on modifie l'état et on garde sur le téléphone ;
+   en ligne on écrit dans Firebase, et l'écran se met à jour tout seul. */
+const store = {
+  addMember(d){ if (!ONLINE){ state.members.push({id:uid("m"), ...d}); save(); return; } fb.db.collection("members").add(d).catch(fail); },
+  declare(d){ if (!ONLINE){ state.declarations.push({id:uid("d"), ...d}); save(); return; } fb.db.collection("declarations").add(d).catch(fail); },
+  dropDecl(id){ if (!ONLINE){ state.declarations = state.declarations.filter(x => x.id !== id); save(); return; } fb.db.doc("declarations/" + id).delete().catch(fail); },
+  confirmDecl(dc){
+    const c = dc.collecte ? collecteById(dc.collecte) : null;
+    const p = {id:uid("p"), memberId:dc.memberId, montant:dc.montant, devise:dc.devise, date:dc.date, cat:dc.cat, motif:dc.note || (c ? c.titre : CATS[dc.cat]), moyen:dc.moyen, par:myUid(), declarePar:dc.uid, ...(c ? {collecte:c.id} : {})};
+    if (!ONLINE){ state.payments.push(p); state.declarations = state.declarations.filter(x => x.id !== dc.id); save(); return; }
+    const b = fb.db.batch(); b.set(fb.db.doc("ledger/" + p.date.slice(0,7)), {items: FV().arrayUnion(p)}, {merge:true}); b.delete(fb.db.doc("declarations/" + dc.id)); b.commit().catch(fail); },
+  setPhoto(id, photo){ const m = memberById(id); if (!m) return;
+    if (!ONLINE){ if (photo) m.photo = photo; else delete m.photo; save(); return; }
+    if (photo) m.photo = photo; else delete m.photo;
+    fb.db.doc("members/" + id).update({photo: photo || FV().delete()}).catch(fail); },
+  updateMember(id, d){ if (!ONLINE){ Object.assign(memberById(id), d); save(); return; } fb.db.doc("members/" + id).update(d).catch(fail); },
+  deleteMember(m){
+    const strip = r => ({admins:r.admins.filter(x => x !== m.uid), tresoriers:r.tresoriers.filter(x => x !== m.uid)});
+    if (!ONLINE){ state.members = state.members.filter(x => x.id !== m.id); state.accounts = state.accounts.filter(a => a.memberId !== m.id); if (m.uid) state.roles = strip(state.roles); save(); return; }
+    const b = fb.db.batch(); b.delete(fb.db.doc("members/" + m.id));
+    if (m.uid){ b.delete(fb.db.doc("access/" + m.uid)); b.set(fb.db.doc("bannis/" + m.uid), {at:todayISO}); if (state.roles.admins.includes(m.uid) || state.roles.tresoriers.includes(m.uid)) b.update(fb.db.doc("config/roles"), strip(state.roles)); }
+    b.commit().catch(fail);
+  },
+  addPayment(p){ if (!ONLINE){ state.payments.push(p); save(); return; }
+    fb.db.doc("ledger/" + p.date.slice(0,7)).set({items: FV().arrayUnion(p)}, {merge:true}).catch(fail); },
+  deletePayment(p){ if (!ONLINE){ state.payments = state.payments.filter(x => x.id !== p.id); save(); return; }
+    fb.db.doc("ledger/" + p.date.slice(0,7)).update({items: FV().arrayRemove(p)}).catch(fail); },
+  addCollecte(c){ if (!ONLINE){ state.collectes.push({id:uid("c"), ...c}); save(); return; } fb.db.collection("collectes").add(c).catch(fail); },
+  updateCollecte(id, d){ if (!ONLINE){ Object.assign(state.collectes.find(x => x.id === id), d); save(); return; } fb.db.doc("collectes/" + id).update(d).catch(fail); },
+  addAnnonce(a){ if (!ONLINE){ state.annonces.push({id:uid("a"), ...a}); save(); return; } fb.db.collection("annonces").add(a).catch(fail); },
+  updateAnnonce(id, d){ if (!ONLINE){ Object.assign(state.annonces.find(x => x.id === id), d); save(); return; } fb.db.doc("annonces/" + id).update(d).catch(fail); },
+  deleteAnnonce(id){ if (!ONLINE){ state.annonces = state.annonces.filter(x => x.id !== id); save(); return; } fb.db.doc("annonces/" + id).delete().catch(fail); },
+  addChapter(c){ if (!ONLINE){ state.histoire.push({id:uid("h"), ...c}); save(); return; } fb.db.collection("histoire").add(c).catch(fail); },
+  updateChapter(id, d){ if (!ONLINE){ Object.assign(state.histoire.find(x => x.id === id), d); save(); return; } fb.db.doc("histoire/" + id).update(d).catch(fail); },
+  deleteChapter(id){ if (!ONLINE){ state.histoire = state.histoire.filter(x => x.id !== id); save(); return; } fb.db.doc("histoire/" + id).delete().catch(fail); },
+  saveSettings(st){ if (!ONLINE){ state.settings = st; save(); return; } fb.db.doc("config/settings").set(st).catch(fail); },
+  saveRoles(r){ if (!ONLINE){ state.roles = r; save(); return; } fb.db.doc("config/roles").update(r).catch(fail); },
+  changeInvite(code){ const old = state.invite;
+    if (!ONLINE){ state.invite = code; save(); return; }
+    const b = fb.db.batch(); b.set(fb.db.doc("invites/" + code), {at:todayISO}); if (old && old !== code) b.delete(fb.db.doc("invites/" + old)); b.set(fb.db.doc("config/invite"), {code}); b.commit().catch(fail); },
+  /* connexion : renvoie un message d'erreur, ou null si tout va bien */
+  async login(tel, pin){
+    if (!ONLINE){
+      const m = state.members.find(x => samePhone(x.tel, tel));
+      const acc = m && state.accounts.find(a => a.memberId === m.id);
+      if (!m || !acc) return "Aucun compte avec ce numéro. Crée ton compte d'abord.";
+      if (acc.pin !== pin) return "Code incorrect. Réessaie.";
+      setSession(m.id); return null;
+    }
+    let n = 0; try { n = await accountN(tel); } catch(e){ /* hors ligne : on essaie l'adresse de départ */ }
+    try { await fb.auth.signInWithEmailAndPassword(emailOf(tel, n), pwdOf(pin)); return null; } catch(e){ return authMsg(e); }
+  },
+  /* « Code oublié » : un responsable crée un code de réinitialisation à 6 chiffres pour ce membre.
+     L'ancien compte perd l'accès ; le membre choisit un nouveau code avec ce code-là. Renvoie le code. */
+  async resetPin(m){
+    const code = newResetCode(), tel = m.telKey || waNumber(m.tel);
+    if (!ONLINE){ state.accounts = state.accounts.filter(a => a.memberId !== m.id); state.resets = {...(state.resets || {}), [tel]:{code, member:m.id}}; save(); return code; }
+    try {
+      const prev = await fb.db.doc("resets/" + tel).get();
+      const old = m.uid || (prev.exists && prev.data().old) || "";
+      const n = (await accountN(tel)) + 1;
+      const b = fb.db.batch();
+      b.set(fb.db.doc("comptes/" + tel), {n});
+      b.set(fb.db.doc("resets/" + tel), {code, old, member:m.id, at:todayISO});
+      if (m.uid){ b.update(fb.db.doc("members/" + m.id), {uid:FV().delete()}); b.delete(fb.db.doc("access/" + m.uid)); }
+      await b.commit(); return code;
+    } catch(e){ fail(e); return null; }
+  },
+  async renew(tel, rcode, pin){
+    const k = waNumber(tel);
+    if (!ONLINE){
+      const r = (state.resets || {})[k];
+      if (!r || r.code !== rcode) return "Le code reçu n'est pas bon. Vérifie-le ou demande-en un autre au responsable.";
+      state.accounts = state.accounts.filter(a => a.memberId !== r.member); state.accounts.push({memberId:r.member, pin});
+      delete state.resets[k]; save(); setSession(r.member); return null;
+    }
+    let n; try { n = await accountN(k); } catch(e){ return "Pas de connexion internet. Réessaie."; }
+    if (!n) return "Aucun nouveau code n'a été demandé pour ce numéro. Demande au responsable de l'igna.";
+    fb.signingUp = true;
+    let user, created = false;
+    try { user = (await fb.auth.createUserWithEmailAndPassword(emailOf(k, n), pwdOf(pin))).user; created = true; }
+    catch(e){
+      if ((e && e.code) !== "auth/email-already-in-use"){ fb.signingUp = false; return authMsg(e); }
+      // déjà commencé avant (connexion coupée) : on reprend avec le même nouveau code
+      try { user = (await fb.auth.signInWithEmailAndPassword(emailOf(k, n), pwdOf(pin))).user; }
+      catch(_){ fb.signingUp = false; return "Ce code a déjà servi. Demande un nouveau code au responsable."; }
+    }
+    const u = user.uid;
+    try {
+      if (!(await fb.db.doc("access/" + u).get()).exists) await fb.db.doc("access/" + u).set({code:rcode, at:todayISO, tel:k});
+    } catch(e){
+      if (created) try { await user.delete(); } catch(_){}
+      try { await fb.auth.signOut(); } catch(_){}
+      fb.signingUp = false; fbStop(); setSession(null); fb.status = "out";
+      return e && e.code === "permission-denied" ? "Le code reçu n'est pas bon. Vérifie-le ou demande-en un autre au responsable." : "Pas de connexion internet. Réessaie."; }
+    fb.signingUp = false; await fbEnter(u); return null;
+  },
+  async signup(d, pin, code){
+    const first = !ONLINE && !state.roles.admins.length;
+    if (!ONLINE){
+      if (!first && code !== state.invite) return "Le code de l'igna n'est pas bon. Demande-le sur le groupe WhatsApp.";
+      let m = state.members.find(x => samePhone(x.tel, d.tel));
+      if (m && state.accounts.some(a => a.memberId === m.id)) return "Ce numéro a déjà un compte. Connecte-toi.";
+      if (!m){ m = {id:uid("m"), role:"Membre", ...d}; state.members.push(m); }
+      m.uid = m.id; state.accounts.push({memberId:m.id, pin});
+      if (first){ state.roles = {admins:[m.uid], tresoriers:[m.uid]}; state.invite = code; }
+      save(); setSession(m.id); return null;
+    }
+    fb.signingUp = true;
+    let cred;
+    try { cred = await fb.auth.createUserWithEmailAndPassword(emailOf(d.tel), pwdOf(pin)); }
+    catch(e){ fb.signingUp = false; return authMsg(e); }
+    const u = cred.user.uid;
+    try { await fb.db.doc("access/" + u).set({code, at:todayISO}); }
+    catch(e){ try { await cred.user.delete(); } catch(_){} fb.signingUp = false; fbStop(); setSession(null); fb.status = "out";
+      return e && e.code === "permission-denied" ? "Le code de l'igna n'est pas bon. Demande-le sur le groupe WhatsApp." : "Pas de connexion internet. Réessaie."; }
+    try {
+      if (!(await fb.db.doc("config/roles").get()).exists){
+        const b = fb.db.batch(); b.set(fb.db.doc("config/roles"), {admins:[u], tresoriers:[u]}); b.set(fb.db.doc("invites/" + code), {at:todayISO}); b.set(fb.db.doc("config/invite"), {code}); await b.commit();
+      }
+      const q = await fb.db.collection("members").where("telKey", "==", waNumber(d.tel)).get();
+      const free = q.docs.find(x => !x.data().uid);
+      if (free) await free.ref.update({uid:u}); else await fb.db.collection("members").add({...d, role:"Membre", uid:u});
+    } catch(e){ console.error(e); }
+    fb.signingUp = false; await fbEnter(u); return null;
+  },
+  async join(code){
+    try { await fb.db.doc("access/" + myUid()).set({code, at:todayISO}); } catch(e){ return e && e.code === "permission-denied" ? "Le code de l'igna n'est pas bon." : "Pas de connexion internet. Réessaie."; }
+    await fbEnter(myUid()); return null;
+  },
+  logout(){ if (!ONLINE){ setSession(null); return; } fb.auth.signOut(); }
+};
+
+/* ---------- rendu ---------- */
+function lieuPill(m){ return `<span class="pill ${m.lieu==="comores"?"km":"dia"}">${m.lieu === "comores" ? LIEUX.comores : LIEUX.diaspora}</span>`; }
+const okPhoto = v => typeof v === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
+function avatar(m, cls){
+  if (okPhoto(m.photo)) return `<img class="avatar ${cls||""}" src="${m.photo}" alt="" aria-hidden="true">`;
+  return `<span class="avatar ${famClass(m.famille)} ${cls||""}" aria-hidden="true">${esc(initials(m.nom))}</span>`;
+}
+/* La photo est réduite dans le téléphone (carré de 256 px, quelques dizaines de Ko)
+   puis rangée dans la fiche du membre : pas besoin de stockage payant. */
+function loadImage(file){
+  return new Promise((ok, ko) => { const url = URL.createObjectURL(file); const im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); ok(im); }; im.onerror = () => { URL.revokeObjectURL(url); ko(new Error("image")); }; im.src = url; });
+}
+async function shrinkPhoto(file){
+  const im = await loadImage(file);
+  const w = im.naturalWidth, h = im.naturalHeight, side = Math.min(w, h); if (!side) throw new Error("image");
+  for (const [size, q] of [[256,.8],[256,.65],[200,.6],[160,.55]]){
+    const c = document.createElement("canvas"); c.width = c.height = size;
+    const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(im, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+    const data = c.toDataURL("image/jpeg", q);
+    if (data.length <= 60000) return data;
+  }
+  throw new Error("trop lourde");
+}
+const collecteById = id => state.collectes.find(c => c.id === id);
+const collectesOuvertes = () => state.collectes.filter(c => c.ouverte).sort((a,b) => (b.ts||0) - (a.ts||0));
+const catOptions = sel => `<option value="mensuelle">${CATS.mensuelle}</option>${collectesOuvertes().map(c => `<option value="c:${esc(c.id)}" ${sel === c.id ? "selected" : ""}>Collecte : ${esc(c.titre)}</option>`).join("")}<option value="evenement">Événement (mariage, décès…)</option><option value="don">${CATS.don}</option>`;
+const parseCat = v => { v = String(v || ""); if (v.startsWith("c:") && collecteById(v.slice(2))) return {cat:"evenement", collecte:v.slice(2)}; return {cat: ["mensuelle","evenement","don"].includes(v) ? v : "mensuelle"}; };
+const MOYENS = ["Virement bancaire", "Espèces remises en main propre", "Mobile money (Mvola, Huri…)", "Autre"];
+const pendingFor = (memberId, mk) => state.declarations.filter(d => d.memberId === memberId && (!mk || d.date.startsWith(mk)));
+const canDeclare = () => !!me() && !canPay();
+function declItem(dc){
+  const m = memberById(dc.memberId); const mine = dc.uid && dc.uid === myUid();
+  return `<div class="decl"><div class="row">${m ? avatar(m) : ""}<span class="body" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+      <span class="name" style="font-weight:700">${esc(m ? m.nom : "Membre retiré")}</span>
+      <span class="muted" style="font-size:.85rem">${esc(CATS[dc.cat] || "")} · ${esc(dateLabel(dc.date))} · ${esc(dc.moyen || "")}${dc.note ? " · " + esc(dc.note) : ""}</span></span>
+      <span class="amt num" style="font-weight:700;white-space:nowrap">${esc(money(dc.montant, dc.devise))}</span></div>
+    ${canPay() ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="decl-no" data-id="${esc(dc.id)}">Refuser</button><button class="btn primary" type="button" data-action="decl-ok" data-id="${esc(dc.id)}">Confirmer</button></div>`
+      : mine ? `<div class="btn-row"><span class="muted" style="font-size:.85rem;align-self:center">En attente du trésorier</span><button class="btn ghost" type="button" data-action="decl-no" data-id="${esc(dc.id)}">Annuler</button></div>` : ""}</div>`;
+}
+function declSection(){
+  const list = [...state.declarations].filter(d => canPay() || d.uid === myUid()).sort((a,b) => a.date.localeCompare(b.date));
+  if (!list.length) return "";
+  return `<div class="section"><div class="group-label"><span>${canPay() ? "Paiements à confirmer" : "Mes paiements à confirmer"}</span><span class="num">${list.length}</span></div><div class="list">${list.map(declItem).join("")}</div></div>`;
+}
+function declareSheet(collecteId){
+  const m = me(); if (!m) return;
+  openSheet("J'ai cotisé", `
+  <form id="declare-form" class="stack" novalidate>
+    <div class="notice">${ICONS.info}<span>Paie comme d'habitude, puis note-le ici. Le trésorier le confirmera et tu passeras « À jour ».</span></div>
+    <div class="field"><label for="dc-cat">Pour quoi ?</label><select id="dc-cat" name="cat">${catOptions(collecteId)}</select></div>
+    <div class="two"><div class="field"><label for="dc-amount">Montant</label><input id="dc-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(expectedOf(m))}" required></div>
+      <div class="field"><label for="dc-devise">Monnaie</label><select id="dc-devise" name="devise"><option value="EUR" ${devOfMember(m)==="EUR"?"selected":""}>Euros (€)</option><option value="KMF" ${devOfMember(m)==="KMF"?"selected":""}>Francs comoriens (FC)</option></select></div></div>
+    <div class="field"><label for="dc-moyen">Comment as-tu payé ?</label><select id="dc-moyen" name="moyen">${MOYENS.map(x => `<option>${esc(x)}</option>`).join("")}</select></div>
+    <div class="field"><label for="dc-date">Date du paiement</label><input id="dc-date" name="date" type="date" value="${todayISO}" max="${todayISO}" required></div>
+    <div class="field"><label for="dc-note">Précision (facultatif)</label><input id="dc-note" name="note" type="text" maxlength="200" placeholder="Ex. : remis à Said, ou cotisation de septembre"></div>
+    <p class="field hint" id="dc-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">Envoyer au trésorier</button>
+  </form>`);
+}
+function submitDeclare(form){
+  const f = new FormData(form), m = me(); if (!m) return;
+  const montant = parseFloat(String(f.get("montant")).replace(",", ".")), date = String(f.get("date") || "");
+  const err = form.querySelector("#dc-error"); const bad = t => { err.textContent = t; err.hidden = false; };
+  if (!(montant > 0) || montant > 10000000) return bad("Indique un montant supérieur à 0.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bad("Choisis la date du paiement.");
+  const pc = parseCat(f.get("cat")), cat = pc.cat;
+  const moyen = MOYENS.includes(String(f.get("moyen"))) ? String(f.get("moyen")) : "Autre";
+  store.declare({memberId:m.id, uid:myUid(), montant, devise: f.get("devise") === "KMF" ? "KMF" : "EUR", date, cat, moyen, note:String(f.get("note") || "").trim().slice(0,200), at:todayISO, ...(pc.collecte ? {collecte:pc.collecte} : {})});
+  closeSheet(); render(); toast("Merci ! Le trésorier va confirmer ton paiement.");
+}
+function movementItem(p){
+  const m = p.memberId ? memberById(p.memberId) : null;
+  const who = m ? m.nom : (isOut(p) ? "Caisse de l'igna" : "Anonyme");
+  const title = isOut(p) ? p.motif : who;
+  const sub = isOut(p) ? `${CATS.sortie} · ${dateLabel(p.date)}` : `${esc(p.motif || CATS[p.cat])} · ${esc(dateLabel(p.date))}`;
+  return `<button class="item" type="button" data-action="movement" data-id="${esc(p.id)}">
+    <span class="mv-icon ${isOut(p)?"out":"in"}">${isOut(p)?ICONS.up:ICONS.down}</span>
+    <span class="body"><span class="name">${esc(title)}</span><span class="sub">${isOut(p) ? esc(sub) : sub}</span></span>
+    <span class="amt ${isOut(p)?"out":"in"}">${isOut(p)?"−":"+"}${esc(money(p.montant, devOfPay(p)))}</span></button>`;
+}
+function chartSVG(){
+  const months = []; for (let i = -5; i <= 0; i++) months.push(shiftMonth(curMonth, i));
+  const vals = months.map(v => Math.round(monthIn(v))); const max = Math.max(...vals, 1);
+  const W = 320, H = 150, top = 22, base = 122, bw = 34, gap = (W - bw*6) / 6;
+  const bars = months.map((mk,i) => {
+    const h = Math.max(2, (vals[i] / max) * (base - top));
+    const x = gap/2 + i*(bw+gap), y = base - h;
+    const fill = mk === curMonth ? "var(--gold-bright)" : "var(--green)";
+    return `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="6" style="fill:${fill}"/>
+      <text class="v" x="${x+bw/2}" y="${y-6}" text-anchor="middle">${nf.format(vals[i])}</text>
+      <text x="${x+bw/2}" y="${base+18}" text-anchor="middle">${esc(monthShort(mk))}</text>`;
+  }).join("");
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Montants encaissés sur les 6 derniers mois"><line x1="0" x2="${W}" y1="${base}" y2="${base}" style="stroke:var(--line)"/>${bars}</svg>`;
+}
+function exampleNotice(){
+  return ONLINE ? "" : `<div class="notice">${ICONS.info}<span><b>Mode démonstration</b>${state.example ? " avec des données d'exemple" : ""}. Tout ce que tu ajoutes reste seulement sur ce téléphone.</span></div>`;
+}
+function renderAccueil(){
+  const t = totals(); const n = state.members.length;
+  const ok = state.members.filter(m => isUpToDate(m.id, curMonth));
+  const late = state.members.filter(m => !isUpToDate(m.id, curMonth));
+  const collected = sumBag(state.payments.filter(p => p.cat === "mensuelle" && p.date.startsWith(curMonth)));
+  const expected = state.members.reduce((b,m) => { b[devOfMember(m)] += expectedOf(m); return b; }, bag());
+  const pct = n ? Math.round(ok.length / n * 100) : 0;
+  return `<div class="topbar"><div class="titles"><span class="eyebrow">Bonjour ${esc((me() || {nom:""}).nom.split(" ")[0])}</span><h1>La caisse</h1></div>
+    <button class="icon-btn" type="button" data-action="settings" aria-label="Réglages">${ICONS.gear}</button></div>
+  <div class="stack">
+    ${canPay() && state.declarations.length ? `<button class="notice" type="button" data-action="goto-decl" style="border:0;text-align:left;color:var(--ink);background:var(--gold-soft)">${ICONS.info}<span><b>${state.declarations.length} paiement${state.declarations.length > 1 ? "s" : ""} à confirmer.</b> Touche ici pour les voir.</span></button>` : ""}
+    ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
+    ${annoncesCollectesSection()}
+    <section class="hero tap" role="button" tabindex="0" data-action="caisse" aria-label="Total de la caisse, toucher pour voir le détail">
+      <span class="label">Total en caisse</span>
+      <div class="cash num"><div><span class="cur">Caisse en euros</span><b>${esc(money(t.cash.EUR, "EUR"))}</b></div><div><span class="cur">Caisse en francs comoriens</span><b>${esc(money(t.cash.KMF, "KMF"))}</b></div></div>
+      <div class="flows num"><span>Au total, environ <b>${esc(money(Math.round(t.eur), "EUR"))}</b></span><span style="opacity:.8">1 € = 491,97 FC</span></div>
+      <span class="more">Voir le détail de la caisse ${ICONS.right}</span>
+    </section>
+    ${exampleNotice()}
+    <section class="section">
+      <div class="section-head"><h2>Cotisation de ${esc(monthLabel(curMonth).toLowerCase())}</h2><button class="link" type="button" data-action="goto-cot">Détail</button></div>
+      <div class="card month-card">
+        <div class="row-between"><span class="big num">${ok.length} sur ${n}</span><span class="muted">membres à jour</span></div>
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
+        <div class="row-between num"><span><b>${esc(multi(collected))}</b> reçus</span><span class="muted">sur ${esc(multi(expected))} attendus</span></div>
+      </div>
+    </section>
+    <section class="section"><div class="section-head"><h2>Comores et diaspora</h2><span class="muted">ce mois-ci</span></div>
+      <div class="split">${["comores","diaspora"].map(k => { const g = state.members.filter(m => m.lieu === k); const up = g.filter(m => isUpToDate(m.id, curMonth)).length;
+        const ids = new Set(g.map(m => m.id)); const versed = multi(sumBag(state.payments.filter(p => ids.has(p.memberId)))); const pc = g.length ? Math.round(up / g.length * 100) : 0;
+        return `<button class="stat ${k==="diaspora"?"dia":""}" type="button" data-action="goto-lieu" data-v="${k}" style="text-align:left;color:inherit;font:inherit">
+          <span class="eyebrow">${k==="comores"?"Aux Comores":"Diaspora"}</span><b class="num">${g.length} membres</b>
+          <span class="bar"><i style="width:${pc}%"></i></span><span class="muted num" style="font-size:.85rem">${up} à jour · ${esc(versed)} versés au total</span></button>`; }).join("")}</div></section>
+    ${late.length ? `<section class="section"><div class="section-head"><h2>Pas encore payé</h2><span class="muted num">${late.length}</span></div>
+      <div class="chips">${late.map(m => canPay() ? `<button class="chip unpaid" type="button" data-action="pay" data-member="${esc(m.id)}">${esc(m.nom)} <span class="plus">+</span></button>` : `<button class="chip unpaid" type="button" data-action="member" data-id="${esc(m.id)}">${esc(m.nom)}</button>`).join("")}</div>
+      <span class="muted" style="font-size:.85rem">${canPay() ? "Touche un nom pour enregistrer son paiement." : "Seul le trésorier enregistre les paiements."}</span>
+      ${canPay() || isAdmin() ? `<button class="btn wa" type="button" data-action="relance">${ICONS.wa}Relancer sur WhatsApp</button>` : ""}</section>` :
+      `<div class="card" style="text-align:center"><b>Tout le monde est à jour ce mois-ci.</b></div>`}
+    <section class="section"><div class="section-head"><h2>Encaissé ces 6 derniers mois</h2><span class="muted">en équivalent €</span></div>
+      <div class="card">${chartSVG()}</div></section>
+    <section class="section"><div class="section-head"><h2>Derniers mouvements</h2><button class="link" type="button" data-action="goto-hist">Tout voir</button></div>
+      <div class="list">${sortedPayments().slice(0,5).map(movementItem).join("") || `<div class="empty">Aucun mouvement pour l'instant.</div>`}</div></section>
+  </div>`;
+}
+/* ---------- annonces ---------- */
+const ANN_TYPES = {reunion:"Réunion", anda:"Grand mariage (Anda)", wukumbi:"Wukumbi", evenement:"Événement", deces:"Décès", collecte:"Collecte", info:"Information"};
+const dayLabel = iso => { if (!okISO(iso)) return ""; const [y,m,d] = iso.split("-").map(Number); const s = new Intl.DateTimeFormat("fr-FR",{weekday:"long",day:"numeric",month:"long"}).format(new Date(y,m-1,d)); return s.charAt(0).toUpperCase()+s.slice(1); };
+const seenKey = "igna-djongo-annonces-vues";
+const annSeen = () => { try { return Number(localStorage.getItem(seenKey) || 0); } catch(e){ return 0; } };
+const markAnnSeen = () => { try { localStorage.setItem(seenKey, String(Date.now())); } catch(e){} };
+const canEditAnnonce = a => isAdmin() || (!!myUid() && a.auteurUid === myUid());
+// à venir d'abord (la plus proche en premier), puis les autres de la plus récente à la plus ancienne
+const annoncesTriees = () => { const fut = state.annonces.filter(a => a.date && a.date >= todayISO).sort((a,b) => a.date.localeCompare(b.date));
+  const rest = state.annonces.filter(a => !(a.date && a.date >= todayISO)).sort((a,b) => (b.ts||0) - (a.ts||0)); return [...fut, ...rest]; };
+const annoncesAccueil = () => { const limite = Date.now() - 30*86400000;
+  return annoncesTriees().filter(a => (a.date && a.date >= todayISO) || (a.ts||0) > limite).slice(0, 3); };
+function annonceCard(a, seen){
+  const quand = [a.date ? dayLabel(a.date) : "", a.lieu || ""].filter(Boolean).join(" · ");
+  return `<button class="annonce ${esc(a.type)}" type="button" data-action="annonce" data-id="${esc(a.id)}">
+    <span class="meta"><span class="pill role">${esc(ANN_TYPES[a.type] || "Information")}</span>${(a.ts||0) > seen && a.auteurUid !== myUid() ? `<span class="pill new">Nouveau</span>` : ""}${quand ? `<span>${esc(quand)}</span>` : ""}</span>
+    <h3>${esc(a.titre)}</h3>${a.texte ? `<span class="excerpt">${esc(a.texte)}</span>` : ""}</button>`;
+}
+function annoncesSheet(){
+  const seen = annSeen(); markAnnSeen();
+  openSheet("Annonces", `<button class="btn primary" type="button" data-action="add-annonce">${ICONS.plus}Publier une annonce</button>
+    <div class="stack" style="gap:8px">${annoncesTriees().map(a => annonceCard(a, seen)).join("") || `<div class="empty">Aucune annonce pour l'instant.</div>`}</div>`);
+}
+function annonceText(a){
+  return `📢 ${ANN_TYPES[a.type] || "Annonce"} – Igna Djongo\n*${a.titre}*` + (a.date ? `\n📅 ${dayLabel(a.date)}` : "") + (a.lieu ? `\n📍 ${a.lieu}` : "") + (a.texte ? `\n\n${a.texte}` : "") + `\n\n${appUrl()}`;
+}
+function annonceSheet(id){
+  const a = state.annonces.find(x => x.id === id); if (!a) return;
+  const au = a.auteur ? memberById(a.auteur) : null;
+  openSheet(ANN_TYPES[a.type] || "Annonce", `
+    <div class="card stack" style="gap:8px"><h3 style="margin:0;font-size:1.2rem">${esc(a.titre)}</h3>
+      ${a.date ? `<span><b>${esc(dayLabel(a.date))}</b> ${esc(yearOf(a.date))}</span>` : ""}${a.lieu ? `<span class="muted">${esc(a.lieu)}</span>` : ""}
+      ${a.texte ? `<p style="margin:0;white-space:pre-wrap">${esc(a.texte)}</p>` : ""}
+      <span class="muted" style="font-size:.85rem">Publié${au ? " par " + esc(au.nom) : ""} le ${esc(dateLabel(a.at))}</span></div>
+    <span class="muted" style="font-size:.85rem;margin-bottom:-6px">Partager</span>
+    <div class="btn-row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(annonceText(a))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a>${fbBtn(annonceText(a))}</div>
+    ${canEditAnnonce(a) ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-annonce" data-id="${esc(a.id)}">Modifier</button><button class="btn danger" type="button" data-action="ask-delete">Supprimer</button></div>
+    <div class="confirm" id="confirm-del" hidden><span>Supprimer cette annonce ?</span>
+      <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-annonce" data-id="${esc(a.id)}">Oui, supprimer</button></div></div>` : ""}`);
+}
+function annonceFormSheet(a){
+  openSheet(a ? "Modifier l'annonce" : "Publier une annonce", `
+  <form id="annonce-form" class="stack" novalidate data-id="${a ? esc(a.id) : ""}">
+    <div class="field"><label for="an-type">Type</label><select id="an-type" name="type">${Object.entries(ANN_TYPES).map(([k,l]) => `<option value="${k}" ${(a ? a.type : "info") === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div class="field"><label for="an-titre">Titre</label><input id="an-titre" name="titre" type="text" maxlength="200" value="${a ? esc(a.titre) : ""}" placeholder="Ex. : Réunion générale de l'igna"></div>
+    <div class="two"><div class="field"><label for="an-date">Date (si c'est un événement)</label><input id="an-date" name="date" type="date" value="${a && a.date ? esc(a.date) : ""}"></div>
+      <div class="field"><label for="an-lieu">Lieu</label><input id="an-lieu" name="lieu" type="text" maxlength="200" value="${a ? esc(a.lieu || "") : ""}" placeholder="Ex. : Moroni, ou en ligne"></div></div>
+    <div class="field"><label for="an-texte">Message</label><textarea class="short" id="an-texte" name="texte" maxlength="5000" placeholder="Ce que tout le monde doit savoir…">${a ? esc(a.texte || "") : ""}</textarea></div>
+    <p class="field hint" id="an-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">${a ? "Enregistrer les changements" : "Publier"}</button>
+  </form>`);
+}
+function submitAnnonce(form){
+  const f = new FormData(form); const get = k => String(f.get(k) || "").trim();
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(get("date")) ? get("date") : "";
+  const d = {type: ANN_TYPES[get("type")] ? get("type") : "info", titre:get("titre").slice(0,200), texte:get("texte").slice(0,5000), date, lieu:get("lieu").slice(0,200)};
+  if (!d.titre){ const e = form.querySelector("#an-error"); e.textContent = "Écris au moins un titre."; e.hidden = false; return; }
+  const id = form.dataset.id;
+  if (id){ store.updateAnnonce(id, d); toast("Annonce modifiée"); }
+  else { store.addAnnonce({...d, auteur: me() ? me().id : "", auteurUid: myUid(), at:todayISO, ts:Date.now()}); toast("Annonce publiée"); }
+  closeSheet(); render();
+}
+
+/* ---------- collectes par projet ---------- */
+const canManageCollecte = () => canPay() || isAdmin();
+const collecteDons = c => state.payments.filter(p => p.collecte === c.id && !isOut(p));
+const collecteTotal = c => collecteDons(c).reduce((s,p) => s + convert(p.montant, devOfPay(p), c.devise), 0);
+const collectePct = c => c.objectif > 0 ? Math.min(100, Math.round(collecteTotal(c) / c.objectif * 100)) : 0;
+function collecteCard(c){
+  const pct = collectePct(c), n = new Set(collecteDons(c).map(p => p.memberId)).size;
+  return `<button class="collecte ${c.ouverte ? "" : "closed"}" type="button" data-action="collecte" data-id="${esc(c.id)}">
+    <span class="meta" style="display:flex;gap:6px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)">${c.ouverte ? `<span class="pill ok">En cours</span>` : `<span class="pill wait">Terminée</span>`}${c.fin ? `<span>jusqu'au ${esc(dateLabel(c.fin))}</span>` : ""}</span>
+    <h3>${esc(c.titre)}</h3>
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
+    <span class="row-between num"><span><b>${esc(money(Math.round(collecteTotal(c)), c.devise))}</b> sur ${esc(money(c.objectif, c.devise))}</span><span class="muted">${pct} % · ${n} participant${n > 1 ? "s" : ""}</span></span></button>`;
+}
+/* Accueil : deux cases côte à côte, Annonces à gauche et Collectes à droite ; chacune ouvre sa propre fenêtre */
+function annoncesCollectesSection(){
+  const seen = annSeen(), ann = annoncesAccueil(), col = collectesOuvertes(), c = col[0];
+  const nouvelles = ann.filter(x => (x.ts||0) > seen && x.auteurUid !== myUid()).sort((x,y) => (y.ts||0) - (x.ts||0)), nNew = nouvelles.length;
+  // la case montre d'abord la dernière annonce pas encore vue, sinon la prochaine à venir
+  const a = nouvelles[0] || ann[0];
+  const annTile = `<button class="stat tile2" type="button" data-action="annonces" aria-label="Annonces">
+      <span class="eyebrow">Annonces${nNew ? ` <span class="pill new">${nNew}</span>` : ""}</span>
+      ${a ? `<span class="pill role" style="align-self:flex-start">${esc(ANN_TYPES[a.type] || "Information")}</span><b class="t">${esc(a.titre)}</b>${a.date ? `<span class="muted s">${esc(dateLabel(a.date))}</span>` : ""}`
+          : `<b class="t muted" style="font-weight:400">Aucune annonce</b>`}
+      <span class="go">${ann.length > 1 ? `+ ${ann.length - 1} autre${ann.length > 2 ? "s" : ""}` : "Ouvrir"} ›</span></button>`;
+  const colTile = `<button class="stat tile2 dia" type="button" data-action="collectes" aria-label="Collectes">
+      <span class="eyebrow">Collectes${col.length ? ` <span class="pill ok">${col.length}</span>` : ""}</span>
+      ${c ? `<b class="t">${esc(c.titre)}</b><span class="bar"><i style="width:${collectePct(c)}%"></i></span><span class="muted s num">${collectePct(c)} % de ${esc(money(c.objectif, c.devise))}</span>`
+          : `<b class="t muted" style="font-weight:400">Aucune en cours</b>`}
+      <span class="go">${col.length > 1 ? `+ ${col.length - 1} autre${col.length > 2 ? "s" : ""}` : "Ouvrir"} ›</span></button>`;
+  return `<div class="split">${annTile}${colTile}</div>`;
+}
+function collectesSheet(){
+  const fin = state.collectes.filter(c => !c.ouverte).sort((a,b) => (b.ts||0) - (a.ts||0));
+  const enCours = collectesOuvertes();
+  openSheet("Collectes", `${canManageCollecte() ? `<button class="btn primary" type="button" data-action="add-collecte">${ICONS.plus}Nouvelle collecte</button>` : ""}${enCours.length ? `<div class="section"><h2>En cours</h2><div class="stack" style="gap:8px">${enCours.map(collecteCard).join("")}</div></div>` : ""}
+    ${enCours.length || fin.length ? "" : `<div class="empty">Aucune collecte pour l'instant.</div>`}
+    ${fin.length ? `<div class="section"><h2>Terminées</h2><div class="stack" style="gap:8px">${fin.map(collecteCard).join("")}</div></div>` : ""}`);
+}
+function collecteText(c){
+  return `🤝 Collecte de l'Igna Djongo\n*${c.titre}*\n` + (c.texte ? `${c.texte}\n` : "") +
+    `\nDéjà ${money(Math.round(collecteTotal(c)), c.devise)} sur ${money(c.objectif, c.devise)} (${collectePct(c)} %)` + (c.fin ? `, jusqu'au ${dayLabel(c.fin).toLowerCase()}` : "") +
+    `.\nPour participer : paie au trésorier puis touche « J'ai cotisé » dans l'application et choisis cette collecte.\n${appUrl()}`;
+}
+function collecteSheet(id){
+  const c = collecteById(id); if (!c) return;
+  const pct = collectePct(c);
+  const parMembre = {}; collecteDons(c).forEach(p => { const k = p.memberId || "?"; parMembre[k] = (parMembre[k] || 0) + convert(p.montant, devOfPay(p), c.devise); });
+  const rows = Object.entries(parMembre).sort((a,b) => b[1] - a[1]).map(([k,v]) => { const m = memberById(k);
+    return `<div class="bilan-row"><span>${esc(m ? m.nom : "Anonyme")}</span><b class="num">${esc(money(Math.round(v), c.devise))}</b></div>`; }).join("");
+  openSheet(c.titre, `
+    <div class="card stack" style="gap:10px">${c.texte ? `<p style="margin:0;white-space:pre-wrap">${esc(c.texte)}</p>` : ""}
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
+      <span class="row-between num"><span><b>${esc(money(Math.round(collecteTotal(c)), c.devise))}</b> sur ${esc(money(c.objectif, c.devise))}</span><b>${pct} %</b></span>
+      ${c.fin ? `<span class="muted">Jusqu'au ${esc(dayLabel(c.fin).toLowerCase())} ${esc(yearOf(c.fin))}</span>` : ""}${c.ouverte ? "" : `<span class="pill wait" style="align-self:flex-start">Collecte terminée</span>`}</div>
+    ${c.ouverte && canPay() ? `<button class="btn primary" type="button" data-action="pay-collecte" data-id="${esc(c.id)}">${ICONS.plus}Enregistrer une participation</button>` : ""}
+    ${c.ouverte && canDeclare() ? `<button class="btn primary" type="button" data-action="declare-collecte" data-id="${esc(c.id)}">${ICONS.plus}J'ai participé</button>` : ""}
+    <span class="muted" style="font-size:.85rem;margin-bottom:-6px">Partager</span>
+    <div class="btn-row"><a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(collecteText(c))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a>${fbBtn(collecteText(c))}</div>
+    <div class="section"><h2>Participations</h2>${rows ? `<div class="card">${rows}</div>` : `<div class="empty">Personne n'a encore participé.</div>`}</div>
+    ${canManageCollecte() ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-collecte" data-id="${esc(c.id)}">Modifier</button><button class="btn ghost" type="button" data-action="toggle-collecte" data-id="${esc(c.id)}">${c.ouverte ? "Terminer la collecte" : "Rouvrir"}</button></div>` : ""}`);
+}
+function collecteFormSheet(c){
+  openSheet(c ? "Modifier la collecte" : "Nouvelle collecte", `
+  <form id="collecte-form" class="stack" novalidate data-id="${c ? esc(c.id) : ""}">
+    <div class="field"><label for="co-titre">Pour quoi ?</label><input id="co-titre" name="titre" type="text" maxlength="200" value="${c ? esc(c.titre) : ""}" placeholder="Ex. : Rénovation de la mosquée du village"></div>
+    <div class="two"><div class="field"><label for="co-obj">Objectif</label><input id="co-obj" name="objectif" type="number" inputmode="decimal" min="1" step="1" value="${c ? esc(c.objectif) : ""}"></div>
+      <div class="field"><label for="co-dev">Monnaie</label><select id="co-dev" name="devise"><option value="EUR" ${c && c.devise === "KMF" ? "" : "selected"}>Euros (€)</option><option value="KMF" ${c && c.devise === "KMF" ? "selected" : ""}>Francs comoriens (FC)</option></select></div></div>
+    <div class="field"><label for="co-fin">Jusqu'à quand ? (facultatif)</label><input id="co-fin" name="fin" type="date" value="${c && c.fin ? esc(c.fin) : ""}"></div>
+    <div class="field"><label for="co-texte">Explication (facultatif)</label><textarea class="short" id="co-texte" name="texte" maxlength="5000" placeholder="À quoi servira l'argent, qui s'en occupe…">${c ? esc(c.texte || "") : ""}</textarea>
+      <span class="hint">Les participations en euros et en francs comoriens sont additionnées (1 € = 491,97 FC).</span></div>
+    <p class="field hint" id="co-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">${c ? "Enregistrer les changements" : "Lancer la collecte"}</button>
+  </form>`);
+}
+function submitCollecte(form){
+  const f = new FormData(form); const get = k => String(f.get(k) || "").trim();
+  const objectif = Math.round(parseFloat(get("objectif").replace(",", ".")));
+  const d = {titre:get("titre").slice(0,200), texte:get("texte").slice(0,5000), objectif, devise: get("devise") === "KMF" ? "KMF" : "EUR", fin: /^\d{4}-\d{2}-\d{2}$/.test(get("fin")) ? get("fin") : ""};
+  const err = form.querySelector("#co-error"); const bad = t => { err.textContent = t; err.hidden = false; };
+  if (!d.titre) return bad("Écris pour quoi est la collecte.");
+  if (!(objectif > 0) || objectif > 100000000) return bad("Indique l'objectif à atteindre.");
+  const id = form.dataset.id;
+  if (id){ store.updateCollecte(id, d); toast("Collecte modifiée"); closeSheet(); render(); collecteSheet(id); return; }
+  store.addCollecte({...d, ouverte:true, auteurUid:myUid(), at:todayISO, ts:Date.now()}); toast("Collecte lancée"); closeSheet(); render();
+}
+
+/* ---------- détail de la caisse ---------- */
+function caisseSheet(){
+  const t = totals();
+  const row = (l, v) => `<div class="bilan-row"><span>${l}</span><b class="num">${v}</b></div>`;
+  const dev = (d, nom) => `<div class="card"><h3 style="margin:0 0 4px;font-size:1rem">${nom}</h3>
+    ${row("Entrées", `<span class="amt in">+${esc(money(t.inn[d], d))}</span>`)}${row("Sorties", `<span class="amt out">${t.out[d] ? "−" : ""}${esc(money(t.out[d], d))}</span>`)}${row("Reste en caisse", esc(money(t.cash[d], d)))}</div>`;
+  // d'où vient l'argent : par collecte quand le paiement en fait partie, sinon par catégorie
+  const src = {};
+  state.payments.filter(p => !isOut(p)).forEach(p => { const c = p.collecte ? collecteById(p.collecte) : null; const k = c ? "Collecte : " + c.titre : CATS[p.cat] || "Autre";
+    (src[k] = src[k] || bag())[devOfPay(p)] += p.montant; });
+  const srcRows = Object.entries(src).sort((a,b) => (b[1].EUR + toEur(b[1].KMF, "KMF")) - (a[1].EUR + toEur(a[1].KMF, "KMF")));
+  const pays = state.payments.filter(p => p.date.startsWith(curMonth));
+  const sorties = sortedPayments().filter(isOut).slice(0,5);
+  openSheet("La caisse en détail", `
+    <div class="card" style="text-align:center"><span class="muted">Au total, environ</span><div class="num" style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;line-height:1.2">${esc(money(Math.round(t.eur), "EUR"))}</div>
+      <span class="muted num" style="font-size:.85rem">${esc(multi(t.cash))} · 1 € = 491,97 FC</span></div>
+    ${dev("EUR", "En euros (diaspora)")}${dev("KMF", "En francs comoriens (Comores)")}
+    <div class="section"><h2>D'où vient l'argent</h2><div class="card">${srcRows.map(([k,b]) => row(esc(k), esc(multi(b)))).join("") || `<span class="muted">Aucune entrée pour l'instant.</span>`}</div></div>
+    <div class="section"><h2>${esc(monthLabel(curMonth))}</h2><div class="card">
+      ${row("Entrées du mois", `<span class="amt in">+${esc(multi(sumBag(pays.filter(p => !isOut(p)))))}</span>`)}${row("Sorties du mois", `<span class="amt out">${pays.some(isOut) ? "−" : ""}${esc(multi(sumBag(pays.filter(isOut))))}</span>`)}</div>
+      <button class="btn ghost" type="button" data-action="bilan-now">Bilan ${esc(deMois(curMonth))} à partager</button></div>
+    <div class="section"><h2>Dernières dépenses</h2><div class="list">${sorties.map(movementItem).join("") || `<div class="empty">Aucune dépense pour l'instant.</div>`}</div></div>
+    <button class="btn primary" type="button" data-action="goto-hist">Voir tous les mouvements</button>`);
+}
+/* ---------- bilan du mois ---------- */
+const deMois = mk => { const l = monthLabel(mk).toLowerCase(); return (/^[aeiouy]/.test(l) ? "d'" : "de ") + l; };
+function bilanData(mk){
+  const pays = state.payments.filter(p => p.date.startsWith(mk));
+  const inn = sumBag(pays.filter(p => !isOut(p))), out = sumBag(pays.filter(isOut));
+  const sorties = pays.filter(isOut).sort((a,b) => a.date.localeCompare(b.date));
+  const lieu = k => { const g = state.members.filter(m => m.lieu === k); return [g.filter(m => isUpToDate(m.id, mk)).length, g.length]; };
+  const ok = state.members.filter(m => isUpToDate(m.id, mk)).length;
+  return {inn, out, sorties, ok, n:state.members.length, km:lieu("comores"), dia:lieu("diaspora"), t:totals()};
+}
+function bilanText(mk){
+  const b = bilanData(mk);
+  return `📊 Bilan de l'Igna Djongo – ${monthLabel(mk).toLowerCase()}\n\n` +
+    `✅ Membres à jour : ${b.ok} sur ${b.n} (Comores ${b.km[0]}/${b.km[1]}, diaspora ${b.dia[0]}/${b.dia[1]})\n` +
+    `➕ Entrées du mois : ${multi(b.inn)}\n➖ Sorties du mois : ${multi(b.out)}\n` +
+    (b.sorties.length ? b.sorties.map(p => `   • ${p.motif || CATS[p.cat]} : ${money(p.montant, devOfPay(p))}`).join("\n") + "\n" : "") +
+    `💰 Caisse aujourd'hui : ${multi(b.t.cash)} (environ ${money(Math.round(b.t.eur), "EUR")})\n\nTout le détail dans l'application : ${appUrl()}`;
+}
+function bilanSheet(mk){
+  const b = bilanData(mk);
+  const row = (l, v) => `<div class="bilan-row"><span>${l}</span><b class="num">${v}</b></div>`;
+  openSheet("Bilan " + deMois(mk), `
+    <div class="card">${row("Membres à jour", `${b.ok} sur ${b.n}`)}${row("Aux Comores", `${b.km[0]} sur ${b.km[1]}`)}${row("Diaspora", `${b.dia[0]} sur ${b.dia[1]}`)}
+      ${row("Entrées du mois", `<span class="amt in">+${esc(multi(b.inn))}</span>`)}${row("Sorties du mois", `<span class="amt out">−${esc(multi(b.out))}</span>`)}
+      ${row("Caisse aujourd'hui", `${esc(multi(b.t.cash))}<br><span class="muted" style="font-weight:400">environ ${esc(money(Math.round(b.t.eur), "EUR"))}</span>`)}</div>
+    ${b.sorties.length ? `<div class="section"><h2>Dépenses du mois</h2><div class="card">${b.sorties.map(p => row(`${esc(p.motif || CATS[p.cat])} <span class="muted">· ${esc(dateLabel(p.date))}</span>`, esc(money(p.montant, devOfPay(p))))).join("")}</div></div>` : ""}
+    <a class="btn wa no-print" href="https://wa.me/?text=${encodeURIComponent(bilanText(mk))}" target="_blank" rel="noopener">${ICONS.wa}Partager sur WhatsApp</a>
+    <button class="btn ghost no-print" type="button" data-action="print">Imprimer pour l'assemblée</button>`);
+}
+function memberRow(m){
+  const ok = isUpToDate(m.id, curMonth);
+  const role = m.role && m.role !== "Membre" ? ` · ${esc(m.role)}` : "";
+  return `<div class="item" role="button" tabindex="0" data-action="member" data-id="${esc(m.id)}">
+    ${avatar(m)}
+    <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.ville)}${role}</span>
+      <span style="display:flex;gap:6px;flex-wrap:wrap">${ok ? `<span class="pill ok">À jour</span>` : pendingFor(m.id, curMonth).length ? `<span class="pill todo">À confirmer</span>` : `<span class="pill wait">Pas encore payé</span>`}${lieuPill(m)}</span></span>
+    <span class="quick">
+      <a href="${esc(telHref(m.tel))}" data-action="noop" aria-label="Appeler ${esc(m.nom)}">${ICONS.phone}</a>
+      <a class="wa" href="https://wa.me/${esc(waNumber(m.tel))}" target="_blank" rel="noopener" data-action="noop" aria-label="WhatsApp ${esc(m.nom)}">${ICONS.wa}</a>
+    </span></div>`;
+}
+function memberTile(m){
+  const ok = isUpToDate(m.id, curMonth), todo = !ok && pendingFor(m.id, curMonth).length;
+  const st = ok ? ["ok","À jour"] : todo ? ["todo","À confirmer"] : ["wait","Pas encore payé"];
+  return `<button class="tile" type="button" data-action="member" data-id="${esc(m.id)}" aria-label="${esc(m.nom)}, ${st[1]}">
+    <span class="disc">${avatar(m)}<span class="dot ${st[0]}" title="${st[1]}"></span></span><span class="tn">${esc(m.nom)}</span></button>`;
+}
+function memberListHTML(){
+  const q = ui.q.trim().toLowerCase();
+  const list = state.members.filter(m => (ui.fam === "all" || m.famille === ui.fam) && (ui.lieu === "all" || m.lieu === ui.lieu) &&
+    (!q || [m.nom, m.ville, m.tel, m.famille].some(v => String(v).toLowerCase().includes(q))));
+  if (!list.length) return `<div class="list"><div class="empty">Aucun membre ne correspond.</div></div>`;
+  if (ui.vue === "mosaique") return `<div class="mosaic">${[...list].sort((a,b) => a.nom.localeCompare(b.nom,"fr")).map(memberTile).join("")}</div>`;
+  return families().filter(f => list.some(m => m.famille === f)).map(f => {
+    const ms = list.filter(m => m.famille === f).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
+    return `<div class="section"><div class="group-label"><span>${esc(f)}</span><span class="num">${ms.length}</span></div><div class="list">${ms.map(memberRow).join("")}</div></div>`;
+  }).join("");
+}
+function renderMembres(){
+  const fams = families();
+  return `<div class="topbar"><div class="titles"><span class="eyebrow">Igna Djongo</span><h1>Membres</h1></div><span class="muted num">${state.members.length} personnes</span></div>
+  <div class="stack">
+    <label class="search">${ICONS.search}<input id="search-members" type="search" placeholder="Chercher un nom, une ville…" value="${esc(ui.q)}" autocomplete="off"></label>
+    <div class="seg three" role="group" aria-label="Filtrer par lieu">${[["all","Tous",state.members.length],["comores","Comores",state.members.filter(m=>m.lieu==="comores").length],["diaspora","Diaspora",state.members.filter(m=>m.lieu==="diaspora").length]].map(([k,l,c]) => `<button type="button" class="${ui.lieu===k?"on":""}" data-action="lieu" data-v="${k}">${l} <span class="num muted">${c}</span></button>`).join("")}</div>
+    <div class="chips scroll" role="group" aria-label="Filtrer par famille">
+      <button class="chip ${ui.fam==="all"?"on":""}" type="button" data-action="fam" data-fam="all">Toutes</button>
+      ${fams.map(f => `<button class="chip ${ui.fam===f?"on":""}" type="button" data-action="fam" data-fam="${esc(f)}">${esc(f.replace(/^Famille /,""))}</button>`).join("")}
+    </div>
+    <div class="view-toggle"><div class="seg" role="group" aria-label="Affichage">
+      <button type="button" class="${ui.vue==="liste"?"on":""}" data-action="vue" data-v="liste" aria-pressed="${ui.vue==="liste"}">${ICONS.liste}Liste</button>
+      <button type="button" class="${ui.vue==="mosaique"?"on":""}" data-action="vue" data-v="mosaique" aria-pressed="${ui.vue==="mosaique"}">${ICONS.mosaique}Mosaïque</button></div></div>
+    ${ui.vue === "mosaique" ? `<div class="hint" style="display:flex;gap:12px;flex-wrap:wrap;font-size:.75rem;color:var(--muted)"><span><span class="dot ok" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> À jour</span><span><span class="dot todo" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> À confirmer</span><span><span class="dot wait" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> Pas encore payé</span></div>` : ""}
+    <div class="stack" id="member-list">${memberListHTML()}</div>
+  </div>`;
+}
+function renderCotisations(){
+  const mk = ui.month;
+  const ok = state.members.filter(m => isUpToDate(m.id, mk)).length;
+  const monthPays = sortedPayments().filter(p => p.date.startsWith(mk));
+  const inn = sumBag(monthPays.filter(p => !isOut(p)));
+  const out = sumBag(monthPays.filter(isOut));
+  let body;
+  if (ui.cotView === "membres"){
+    const ms = [...state.members].sort((a,b) => (isUpToDate(a.id,mk) - isUpToDate(b.id,mk)) || a.nom.localeCompare(b.nom,"fr"));
+    body = `<div class="list">${ms.map(m => { const paid = paidMonth(m.id, mk); const up = isUpToDate(m.id, mk); const dv = devOfMember(m);
+      return `<button class="item" type="button" data-action="${up || !canPay() ? "member" : "pay"}" data-id="${esc(m.id)}" data-member="${esc(m.id)}">${avatar(m)}
+        <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.famille)} · ${m.lieu === "comores" ? LIEUX.comores : LIEUX.diaspora}</span></span>
+        ${up ? `<span class="pill ok num">Payé ${esc(money(paid, dv))}</span>` : pendingFor(m.id, mk).length ? `<span class="pill todo">À confirmer</span>` : `<span class="pill wait">${paid ? "Partiel " + esc(money(paid, dv)) : "À payer " + esc(money(expectedOf(m), dv))}</span>`}</button>`; }).join("")}</div>`;
+  } else {
+    body = `<div class="list">${monthPays.map(movementItem).join("") || `<div class="empty">Aucun mouvement en ${esc(monthLabel(mk).toLowerCase())}.</div>`}</div>`;
+  }
+  return `<div class="topbar"><div class="titles"><span class="eyebrow">Igna Djongo</span><h1>Cotisations</h1></div><span class="muted num" style="text-align:right">${esc(money(state.settings.mensuelle,"EUR"))} ou ${esc(money(state.settings.mensuelleKMF,"KMF"))}<br>par mois</span></div>
+  <div class="stack">
+    <div class="switcher"><button class="icon-btn" type="button" data-action="month" data-d="-1" aria-label="Mois précédent">${ICONS.left}</button>
+      <strong>${esc(monthLabel(mk))}</strong>
+      <button class="icon-btn" type="button" data-action="month" data-d="1" aria-label="Mois suivant" ${mk >= curMonth ? "disabled style=\"opacity:.3\"" : ""}>${ICONS.right}</button></div>
+    <div class="stats">
+      <div class="stat"><span class="muted">À jour</span><b class="num">${ok} / ${state.members.length}</b></div>
+      <div class="stat"><span class="muted">Entrées · sorties</span><b class="num" style="font-size:.95rem;line-height:1.35"><span class="amt in">+${esc(multi(inn))}</span><br><span class="amt out">−${esc(multi(out))}</span></b></div>
+    </div>
+    <button class="btn ghost" type="button" data-action="bilan">Bilan ${esc(deMois(mk))} à partager</button>
+    <div class="seg" role="tablist"><button type="button" role="tab" class="${ui.cotView==="membres"?"on":""}" data-action="cotview" data-v="membres">Qui a payé</button>
+      <button type="button" role="tab" class="${ui.cotView==="mouvements"?"on":""}" data-action="cotview" data-v="mouvements">Mouvements</button></div>
+    ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
+    ${declSection()}
+    ${(canPay() || isAdmin()) && mk === curMonth && ui.cotView === "membres" && ok < state.members.length ? `<button class="btn wa" type="button" data-action="relance">${ICONS.wa}Relancer les retards sur WhatsApp</button>` : ""}
+    ${body}
+  </div>`;
+}
+function renderRenew(){
+  return `<div class="auth">
+    <section class="hero"><span class="label">Igna Djongo</span><h1>Code oublié</h1><p>Demande au responsable de l'igna de te donner un nouveau code. Il te l'envoie sur WhatsApp (6 chiffres). Ensuite remplis ce qui suit.</p></section>
+    <form id="renew-form" class="stack" novalidate>
+      <div class="field"><label for="rn-tel">Ton numéro de téléphone</label><input id="rn-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="+33 6… ou +269…"></div>
+      <div class="field"><label for="rn-code">Code reçu du responsable</label><input id="rn-code" name="rcode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 chiffres"></div>
+      <div class="two"><div class="field"><label for="rn-pin">Nouveau code</label><input id="rn-pin" class="pin" name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="4 chiffres"></div>
+        <div class="field"><label for="rn-pin2">Répète le code</label><input id="rn-pin2" class="pin" name="pin2" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password"></div></div>
+      <p class="field hint" id="auth-error" hidden style="color:var(--bad)"></p>
+      <button class="btn primary" type="submit">Choisir mon nouveau code</button>
+      <button class="btn ghost" type="button" data-action="auth-mode" data-v="login">Retour</button>
+    </form>
+  </div>`;
+}
+async function submitRenew(form){
+  const f = new FormData(form); const get = k => String(f.get(k)||"").trim();
+  const tel = get("tel"), rcode = get("rcode").replace(/\s/g, ""), pin = get("pin");
+  if (waNumber(tel).length < 6) return authError(form, "Vérifie ton numéro de téléphone.");
+  if (!/^\d{6}$/.test(rcode)) return authError(form, "Entre les 6 chiffres reçus du responsable.");
+  if (!/^\d{4}$/.test(pin)) return authError(form, "Le nouveau code doit faire 4 chiffres.");
+  if (pin !== get("pin2")) return authError(form, "Les deux codes ne sont pas pareils.");
+  busy(form, true); const err = await store.renew(tel, rcode, pin); busy(form, false);
+  if (err) return authError(form, err);
+  authMode = "login"; ui.tab = "accueil"; render(); scrollTo(0,0); toast("Nouveau code enregistré. Bienvenue !");
+}
+function renderAuth(){
+  if (authMode === "renew") return renderRenew();
+  const fams = families();
+  const login = authMode === "login";
+  return `<div class="auth">
+    <section class="hero"><span class="label">Igna Djongo</span><h1>Bienvenue dans l'Igna Djongo</h1><p>${login ? "Connecte-toi avec ton numéro de téléphone et ton code." : "Crée ton compte pour voir les membres, la caisse et notre histoire."}</p></section>
+    <div class="seg" role="tablist"><button type="button" role="tab" class="${login?"on":""}" data-action="auth-mode" data-v="login">Se connecter</button><button type="button" role="tab" class="${login?"":"on"}" data-action="auth-mode" data-v="signup">Créer mon compte</button></div>
+    ${login ? `<form id="login-form" class="stack" novalidate>
+      <div class="field"><label for="li-tel">Numéro de téléphone</label><input id="li-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="+33 6… ou +269…"></div>
+      <div class="field"><label for="li-pin">Code secret (4 chiffres)</label><input id="li-pin" class="pin" name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password"></div>
+      <p class="field hint" id="auth-error" hidden style="color:var(--bad)"></p>
+      <button class="btn primary" type="submit">Se connecter</button>
+      <button class="link" type="button" data-action="auth-mode" data-v="renew" style="align-self:center">Code oublié ?</button>
+      ${!ONLINE && state.example ? `<div class="demo">Pour tester : le président <b>+33 6 00 00 00 01</b> ou la trésorière <b>+33 6 00 00 00 02</b>, code <b>1234</b>. Pour créer un compte, le code de l'igna est <b>djongo</b>.</div>` : ""}
+    </form>` : `<form id="signup-form" class="stack" novalidate>
+      <div class="field"><label for="su-nom">Nom complet</label><input id="su-nom" name="nom" type="text" autocomplete="name"></div>
+      <div class="field"><label for="su-tel">Numéro de téléphone</label><input id="su-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="+33 6… ou +269…"><span class="hint">C'est ce numéro qui te servira pour te connecter.</span></div>
+      <div class="field"><label for="su-fam">Famille</label><input id="su-fam" name="famille" type="text" list="su-fams" placeholder="Ex. : Famille Mbaé"><datalist id="su-fams">${fams.map(f => `<option value="${esc(f)}"></option>`).join("")}</datalist></div>
+      <div class="two"><div class="field"><label for="su-ville">Ville</label><input id="su-ville" name="ville" type="text"></div>
+        <div class="field"><label for="su-lieu">Tu vis</label><select id="su-lieu" name="lieu"><option value="diaspora">Dans la diaspora</option><option value="comores">Aux Comores</option></select></div></div>
+      <div class="two"><div class="field"><label for="su-pin">Choisis un code</label><input id="su-pin" class="pin" name="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="4 chiffres"></div>
+        <div class="field"><label for="su-pin2">Répète le code</label><input id="su-pin2" class="pin" name="pin2" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password"></div></div>
+      <div class="field"><label for="su-code">Code de l'igna</label><input id="su-code" name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="hint">Il est donné sur le groupe WhatsApp de l'igna. Il évite que des inconnus entrent.</span></div>
+      <p class="field hint" id="auth-error" hidden style="color:var(--bad)"></p>
+      <p class="hint" style="margin:0;font-size:.8rem;color:var(--muted)">En créant ton compte, tu acceptes les <button class="link" type="button" data-action="cgu">conditions d'utilisation</button> et la <button class="link" type="button" data-action="confidentialite">politique de confidentialité</button>.</p>
+      <button class="btn primary" type="submit">Créer mon compte</button>
+    </form>`}
+  </div>`;
+}
+function authError(form, msg){ const e = form.querySelector("#auth-error"); e.textContent = msg; e.hidden = false; }
+function busy(form, on){ const b = form.querySelector("button[type=submit]"); if (b){ b.disabled = on; b.style.opacity = on ? .6 : ""; } }
+async function submitLogin(form){
+  const f = new FormData(form); const tel = String(f.get("tel")||"").trim(), pin = String(f.get("pin")||"").trim();
+  if (!tel || !/^\d{4}$/.test(pin)) return authError(form, "Entre ton numéro et ton code à 4 chiffres.");
+  if (waNumber(tel).length < 6) return authError(form, "Vérifie ton numéro de téléphone.");
+  busy(form, true); const err = await store.login(tel, pin); busy(form, false);
+  if (err) return authError(form, err);
+  ui.tab = "accueil"; render(); scrollTo(0,0); toast("Bienvenue");
+}
+async function submitSignup(form){
+  const f = new FormData(form); const get = k => String(f.get(k)||"").trim();
+  const d = {nom:get("nom"), tel:get("tel"), famille:get("famille"), ville:get("ville"), lieu:get("lieu")==="comores"?"comores":"diaspora"};
+  if (!d.nom || !d.tel || !d.famille || !d.ville) return authError(form, "Remplis ton nom, ton numéro, ta famille et ta ville.");
+  if (waNumber(d.tel).length < 6) return authError(form, "Vérifie ton numéro de téléphone.");
+  if (!/^\d{4}$/.test(get("pin"))) return authError(form, "Le code doit faire 4 chiffres.");
+  if (get("pin") !== get("pin2")) return authError(form, "Les deux codes ne sont pas pareils.");
+  const code = cleanCode(get("code"));
+  if (!validCode(code)) return authError(form, "Entre le code de l'igna (au moins 4 lettres ou chiffres, sans espace).");
+  if (!/^famille\s/i.test(d.famille)) d.famille = "Famille " + d.famille;
+  d.telKey = waNumber(d.tel);
+  busy(form, true); const err = await store.signup(d, get("pin"), code); busy(form, false);
+  if (err) return authError(form, err);
+  ui.tab = "accueil"; render(); scrollTo(0,0); toast(`Compte créé. Bienvenue ${d.nom.split(" ")[0]} !`);
+}
+function statusView(title, text, extra){
+  return `<div class="auth"><section class="hero"><span class="label">Igna Djongo</span><h1>${esc(title)}</h1><p>${esc(text)}</p></section>${extra || ""}</div>`;
+}
+function noAccessView(){
+  return statusView("Il manque le code de l'igna", "Ton compte existe mais n'a pas encore accès, ou l'accès a été retiré. Entre le code de l'igna donné sur le groupe WhatsApp.",
+    `<form id="join-form" class="stack" novalidate><div class="field"><label for="jn-code">Code de l'igna</label><input id="jn-code" name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+      <p class="field hint" id="auth-error" hidden style="color:var(--bad)"></p><button class="btn primary" type="submit">Entrer</button>
+      <button class="btn ghost" type="button" data-action="logout">Se déconnecter</button></form>`);
+}
+async function submitJoin(form){
+  const code = cleanCode(new FormData(form).get("code"));
+  if (!validCode(code)) return authError(form, "Entre le code de l'igna.");
+  busy(form, true); const err = await store.join(code); busy(form, false);
+  if (err) authError(form, err);
+}
+const chapterKey = c => c.annee == null ? (c.ordre || 0) - 100000 : c.annee;
+function renderHistoire(){
+  const list = [...state.histoire].sort((a,b) => chapterKey(a) - chapterKey(b) || (a.ordre||0) - (b.ordre||0));
+  return `<div class="topbar"><div class="titles"><span class="eyebrow">Igna Djongo</span><h1>Notre histoire</h1></div><span class="muted num">${list.length} chapitre${list.length>1?"s":""}</span></div>
+  <div class="stack">
+    <p class="muted" style="margin:0">Chacun peut ajouter un chapitre : un souvenir, une date importante, ce que racontent les anciens. L'histoire s'écrit petit à petit.</p>
+    ${list.length ? `<div class="timeline">${list.map(c => { const a = memberById(c.auteur);
+      return `<button class="chapter" type="button" data-action="chapter" data-id="${esc(c.id)}">
+        <span class="periode">${esc(c.periode || "Sans date")}</span><h3>${esc(c.titre)}</h3>
+        <span class="excerpt">${esc(c.texte)}</span>
+        <span class="by">${c.exemple ? `<span class="pill ex">Exemple</span> ` : ""}${a ? "Écrit par " + esc(a.nom) : ""}</span></button>`; }).join("")}</div>`
+      : `<div class="card empty">Aucun chapitre pour l'instant. Touche « Ajouter un chapitre » pour écrire le premier.</div>`}
+  </div>`;
+}
+function chapterSheet(id){
+  const c = state.histoire.find(x => x.id === id); if (!c) return;
+  const a = memberById(c.auteur);
+  openSheet(c.periode || "Histoire", `
+    <div class="stack" style="gap:10px"><h2 style="font-size:1.4rem">${esc(c.titre)}</h2>
+      <span class="muted" style="font-size:.85rem">${c.exemple ? `<span class="pill ex">Exemple</span> ` : ""}${a ? "Écrit par " + esc(a.nom) + " · " : ""}ajouté le ${esc(dateLabel(c.ajoute))} ${esc(yearOf(c.ajoute))}</span>
+      <div class="story">${esc(c.texte)}</div></div>
+    ${canDeleteChapter(c) ? `<div class="btn-row"><button class="btn ghost" type="button" data-action="edit-chapter" data-id="${esc(c.id)}">Modifier</button><button class="btn danger" type="button" data-action="ask-delete">Supprimer</button></div>` : ""}
+    <div class="confirm" id="confirm-del" hidden><span>Supprimer ce chapitre de l'histoire ?</span>
+      <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-chapter" data-id="${esc(c.id)}">Oui, supprimer</button></div></div>`);
+}
+function chapterFormSheet(c){
+  openSheet(c ? "Modifier le chapitre" : "Ajouter un chapitre", `
+  <form id="chapter-form" class="stack" novalidate data-id="${c ? esc(c.id) : ""}">
+    <div class="two"><div class="field"><label for="ch-periode">Quand ?</label><input id="ch-periode" name="periode" type="text" value="${c ? esc(c.periode) : ""}" placeholder="Ex. : Années 1950"></div>
+      <div class="field"><label for="ch-annee">Année (pour le classement)</label><input id="ch-annee" name="annee" type="number" inputmode="numeric" value="${c && c.annee != null ? esc(c.annee) : ""}" placeholder="Ex. : 1955"></div></div>
+    <div class="field"><label for="ch-titre">Titre</label><input id="ch-titre" name="titre" type="text" value="${c ? esc(c.titre) : ""}" placeholder="Ex. : Le premier grand mariage de l'igna"></div>
+    <div class="field"><label for="ch-texte">Le récit</label><textarea id="ch-texte" name="texte" placeholder="Raconte ce qui s'est passé, qui était là, ce que disent les anciens…">${c ? esc(c.texte) : ""}</textarea>
+      <span class="hint">Si tu ne connais pas l'année exacte, laisse la case vide : le chapitre sera placé au début.</span></div>
+    <p class="field hint" id="ch-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">${c ? "Enregistrer les changements" : "Ajouter à l'histoire"}</button>
+  </form>`);
+}
+function submitChapter(form){
+  const f = new FormData(form); const get = k => String(f.get(k) || "").trim();
+  const an = get("annee"); const annee = /^\d{3,4}$/.test(an) ? Number(an) : null;
+  const d = {periode: get("periode") || (annee ? String(annee) : ""), annee, titre:get("titre"), texte:get("texte")};
+  if (!d.titre || !d.texte){ const e = form.querySelector("#ch-error"); e.textContent = "Écris au moins un titre et le récit."; e.hidden = false; return; }
+  const id = form.dataset.id;
+  if (id){ store.updateChapter(id, {...d, exemple:false}); toast("Chapitre modifié"); }
+  else { store.addChapter({ordre:Date.now(), auteur: me() ? me().id : null, auteurUid: myUid(), ajoute:todayISO, exemple:false, ...d}); toast("Chapitre ajouté à l'histoire"); }
+  closeSheet(); render();
+}
+function render(){
+  const v = document.getElementById("view");
+  const st = ONLINE ? fb.status : (myUid() ? "in" : "out");
+  const locked = st !== "in";
+  document.getElementById("tabs").hidden = locked; document.getElementById("fab").hidden = locked;
+  if (locked){
+    if (st === "out") v.innerHTML = renderAuth();
+    else if (st === "noaccess") v.innerHTML = noAccessView();
+    else if (st === "error") v.innerHTML = statusView("Pas de connexion", "L'application n'arrive pas à joindre internet. Vérifie ta connexion puis rouvre l'application.");
+    else v.innerHTML = statusView("Chargement…", "Un instant, on récupère les informations de l'igna.");
+    v.insertAdjacentHTML("beforeend", SIGNATURE);
+    return;
+  }
+  v.innerHTML = ui.tab === "accueil" ? renderAccueil() : ui.tab === "membres" ? renderMembres() : ui.tab === "histoire" ? renderHistoire() : renderCotisations();
+  v.insertAdjacentHTML("beforeend", SIGNATURE);
+  document.querySelectorAll("nav.tabs button").forEach(b => { const on = b.dataset.tab === ui.tab; b.classList.toggle("on", on); b.setAttribute("aria-current", on ? "page" : "false"); });
+  const fab = document.getElementById("fab");
+  if (ui.tab === "membres"){ fab.innerHTML = ICONS.plus + "Ajouter un membre"; fab.dataset.action = "add-member"; }
+  else if (ui.tab === "histoire"){ fab.innerHTML = ICONS.plus + "Ajouter un chapitre"; fab.dataset.action = "add-chapter"; }
+  else { fab.innerHTML = ICONS.plus + "Enregistrer un paiement"; fab.dataset.action = "pay"; delete fab.dataset.member; fab.hidden = !canPay(); }
+}
+
+/* ---------- feuilles ---------- */
+let sheetCleanup = null;
+function openSheet(title, html, onMount){
+  const root = document.getElementById("sheet-root");
+  root.innerHTML = `<div class="overlay" data-action="overlay"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <span class="grabber"></span><div class="sheet-head"><h2>${esc(title)}</h2><button class="icon-btn" type="button" data-action="close" aria-label="Fermer">${ICONS.x}</button></div>${html}</div></div>`;
+  if (onMount) sheetCleanup = onMount(root.querySelector(".sheet")) || null;
+  const first = root.querySelector("input,select"); if (first && !("ontouchstart" in window)) first.focus();
+}
+function closeSheet(){ document.getElementById("sheet-root").innerHTML = ""; if (sheetCleanup) sheetCleanup(); sheetCleanup = null; }
+function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2200); }
+
+function paySheet(memberId, collecteId){
+  const opts = [...state.members].sort((a,b) => a.nom.localeCompare(b.nom,"fr")).map(m => `<option value="${esc(m.id)}" ${m.id===memberId?"selected":""}>${esc(m.nom)}</option>`).join("");
+  const defDate = ui.tab === "cotisations" && ui.month !== curMonth ? `${ui.month}-15` : todayISO;
+  openSheet("Enregistrer un mouvement", `
+  <form id="pay-form" class="stack" novalidate>
+    <div class="toggle" role="group" aria-label="Type"><button type="button" class="on in" data-kind="in">Entrée d'argent</button><button type="button" class="out" data-kind="out">Sortie d'argent</button></div>
+    <div class="field" data-for="in"><label for="pay-member">Qui a payé ?</label><select id="pay-member" name="member">${opts}</select></div>
+    <div class="field" data-for="in"><label for="pay-cat">Pour quoi ?</label><select id="pay-cat" name="cat">${catOptions(collecteId)}</select></div>
+    <div class="field"><label for="pay-motif" id="pay-motif-label">Précision (facultatif)</label><input id="pay-motif" name="motif" type="text" placeholder="Ex. : Grand mariage de…"></div>
+    <div class="two"><div class="field"><label for="pay-amount">Montant</label><input id="pay-amount" name="montant" type="number" inputmode="decimal" min="0" step="0.01" value="${esc(expectedOf(memberById(memberId) || [...state.members].sort((a,b) => a.nom.localeCompare(b.nom,"fr"))[0]))}" required></div>
+      <div class="field"><label for="pay-devise">Monnaie</label><select id="pay-devise" name="devise"><option value="EUR">Euros (€)</option><option value="KMF">Francs comoriens (FC)</option></select></div></div>
+    <div class="field"><label for="pay-date">Date</label><input id="pay-date" name="date" type="date" value="${esc(defDate)}" required></div>
+    <p class="field hint" id="pay-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">Enregistrer</button>
+  </form>`, sheet => {
+    const form = sheet.querySelector("#pay-form"); form.dataset.kind = "in";
+    sheet.querySelectorAll(".toggle button").forEach(b => b.addEventListener("click", () => {
+      form.dataset.kind = b.dataset.kind;
+      sheet.querySelectorAll(".toggle button").forEach(x => x.classList.toggle("on", x === b));
+      sheet.querySelectorAll("[data-for=in]").forEach(el => el.hidden = b.dataset.kind !== "in");
+      sheet.querySelector("#pay-motif-label").textContent = b.dataset.kind === "in" ? "Précision (facultatif)" : "Pour quoi ? (obligatoire)";
+      sheet.querySelector("#pay-motif").placeholder = b.dataset.kind === "in" ? "Ex. : Grand mariage de…" : "Ex. : Soutien décès, location de salle…";
+    }));
+    const sel = sheet.querySelector("#pay-member"), cat = sheet.querySelector("#pay-cat"), amt = sheet.querySelector("#pay-amount"), dev = sheet.querySelector("#pay-devise");
+    const sync = () => { const m = memberById(sel.value); dev.value = devOfMember(m); if (cat.value === "mensuelle") amt.value = expectedOf(m); };
+    sel.addEventListener("change", sync); cat.addEventListener("change", sync); sync();
+  });
+}
+function submitPay(form){
+  const kind = form.dataset.kind, f = new FormData(form);
+  const montant = parseFloat(String(f.get("montant")).replace(",", "."));
+  const motif = String(f.get("motif") || "").trim(), date = String(f.get("date") || "");
+  const err = form.querySelector("#pay-error");
+  const fail = m => { err.textContent = m; err.hidden = false; };
+  if (!(montant > 0)) return fail("Indique un montant supérieur à 0.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail("Choisis une date.");
+  if (kind === "out" && !motif) return fail("Pour une sortie, écris à quoi l'argent a servi.");
+  const devise = f.get("devise") === "KMF" ? "KMF" : "EUR";
+  const p = kind === "out" ? {id:uid("p"), memberId:null, montant, devise, date, cat:"sortie", motif, par:myUid()}
+    : (() => { const pc = parseCat(f.get("cat")), c = pc.collecte ? collecteById(pc.collecte) : null;
+        return {id:uid("p"), memberId:String(f.get("member")), montant, devise, date, cat:pc.cat, motif: motif || (c ? c.titre : CATS[pc.cat]), par:myUid(), ...(c ? {collecte:c.id} : {})}; })();
+  store.addPayment(p); closeSheet(); render();
+  toast(kind === "out" ? "Sortie enregistrée" : `Paiement de ${memberById(p.memberId).nom.split(" ")[0]} enregistré`);
+}
+function memberFormSheet(m){
+  const fams = families();
+  openSheet(m ? "Modifier le membre" : "Ajouter un membre", `
+  <form id="member-form" class="stack" novalidate data-id="${m ? esc(m.id) : ""}">
+    <div class="field"><label for="mf-nom">Nom complet</label><input id="mf-nom" name="nom" type="text" autocomplete="name" value="${m ? esc(m.nom) : ""}" required></div>
+    <div class="field"><label for="mf-fam">Famille</label><input id="mf-fam" name="famille" type="text" list="mf-fams" value="${m ? esc(m.famille) : ""}" placeholder="Ex. : Famille Mbaé" required>
+      <datalist id="mf-fams">${fams.map(f => `<option value="${esc(f)}"></option>`).join("")}</datalist><span class="hint">Choisis une famille existante ou écris-en une nouvelle.</span></div>
+    <div class="field"><label for="mf-tel">Téléphone</label><input id="mf-tel" name="tel" type="tel" inputmode="tel" value="${m ? esc(m.tel) : ""}" placeholder="+33 6… ou +269…" required></div>
+    <div class="field"><label for="mf-lieu">Où vit cette personne ?</label><select id="mf-lieu" name="lieu"><option value="comores" ${m && m.lieu==="comores"?"selected":""}>Aux Comores</option><option value="diaspora" ${m && m.lieu==="diaspora"?"selected":""}>Dans la diaspora (France, ailleurs)</option></select></div>
+    <div class="two"><div class="field"><label for="mf-ville">Ville</label><input id="mf-ville" name="ville" type="text" value="${m ? esc(m.ville) : ""}" required></div>
+      <div class="field"><label for="mf-role">Rôle</label><select id="mf-role" name="role" ${isAdmin() || canPay() ? "" : "disabled"}>${ROLES.map(r => `<option ${m && m.role===r?"selected":""}>${r}</option>`).join("")}</select></div></div>
+    <p class="field hint" id="mf-error" hidden style="color:var(--bad)"></p>
+    <button class="btn primary" type="submit">${m ? "Enregistrer les changements" : "Ajouter à l'igna"}</button>
+  </form>`);
+}
+function submitMember(form){
+  const f = new FormData(form); const get = k => String(f.get(k) || "").trim();
+  const data = {nom:get("nom"), famille:get("famille"), tel:get("tel"), ville:get("ville"), role:get("role") || "Membre", lieu:get("lieu") === "comores" ? "comores" : "diaspora"};
+  const err = form.querySelector("#mf-error");
+  if (!data.nom || !data.famille || !data.tel || !data.ville){ err.textContent = "Remplis le nom, la famille, le téléphone et la ville."; err.hidden = false; return; }
+  if (!/^famille\s/i.test(data.famille)) data.famille = "Famille " + data.famille;
+  data.telKey = waNumber(data.tel);
+  const id = form.dataset.id;
+  if (id && !(isAdmin() || canPay())) data.role = (memberById(id) || {}).role || "Membre";
+  if (id){ store.updateMember(id, data); toast("Changements enregistrés"); }
+  else { store.addMember(data); toast(`${data.nom} ajouté(e) à l'igna`); }
+  closeSheet(); render();
+}
+function memberSheet(id){
+  const m = memberById(id); if (!m) return;
+  const pays = sortedPayments().filter(p => p.memberId === id);
+  const total = multi(sumBag(pays));
+  let upCount = 0; for (let i = -5; i <= 0; i++) if (isUpToDate(id, shiftMonth(curMonth,i))) upCount++;
+  openSheet(m.nom, `
+    <div class="profile">${avatar(m,"xl")}${canEditMember(m) ? `<div class="photo-btns"><label class="btn ghost" for="photo-input">${ICONS.camera}${okPhoto(m.photo) ? "Changer la photo" : "Ajouter une photo"}</label>${okPhoto(m.photo) ? `<button class="btn ghost" type="button" data-action="remove-photo" data-id="${esc(m.id)}">Enlever</button>` : ""}<input id="photo-input" type="file" accept="image/*" data-id="${esc(m.id)}" hidden></div>` : ""}<span class="muted">${esc(m.famille)} · ${esc(m.ville)}</span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${lieuPill(m)}${m.role && m.role !== "Membre" ? `<span class="pill role">${esc(m.role)}</span>` : ""}${m.uid && state.roles.tresoriers.includes(m.uid) ? `<span class="pill ok">Enregistre les paiements</span>` : ""}${m.uid ? "" : `<span class="pill wait">Pas encore de compte</span>`}</span></div>
+    <div class="phone-line"><span>${esc(m.tel)}</span><button class="icon-btn" type="button" data-action="copy" data-text="${esc(m.tel)}" aria-label="Copier le numéro">${ICONS.copy}</button></div>
+    <div class="btn-row"><a class="btn ghost" href="${esc(telHref(m.tel))}">${ICONS.phone}Appeler</a><a class="btn wa" href="https://wa.me/${esc(waNumber(m.tel))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a></div>
+    <div class="stats"><div class="stat"><span class="muted">Total versé</span><b class="num" style="font-size:1.1rem">${esc(total)}</b></div>
+      <div class="stat"><span class="muted">Mois à jour</span><b class="num">${upCount} sur 6</b></div></div>
+    ${canDeclare() && m.uid === myUid() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
+    ${canPay() ? `<button class="btn primary" type="button" data-action="pay" data-member="${esc(m.id)}">${ICONS.plus}Enregistrer un paiement</button>` : ""}
+    <div class="section"><h2>Ses paiements</h2><div class="list">${pays.map(movementItem).join("") || `<div class="empty">Aucun paiement enregistré.</div>`}</div></div>
+    ${isAdmin() && m.id !== (me() || {}).id && (!ONLINE || m.uid || m.telKey) ? `<button class="btn ghost" type="button" data-action="reset-pin" data-id="${esc(m.id)}">${ICONS.info}Code oublié : donner un nouveau code</button>` : ""}
+    ${canEditMember(m) || (isAdmin() && m.uid !== myUid()) ? `<div class="btn-row">${canEditMember(m) ? `<button class="btn ghost" type="button" data-action="edit-member" data-id="${esc(m.id)}">Modifier</button>` : ""}${isAdmin() && m.uid !== myUid() ? `<button class="btn danger" type="button" data-action="ask-delete">Retirer</button>` : ""}</div>` : ""}
+    <div class="confirm" id="confirm-del" hidden><span>Retirer <b>${esc(m.nom)}</b> de la liste ? Ses paiements restent dans la caisse.${m.uid ? " Son compte n'aura plus accès à l'application." : ""}</span>
+      <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-member" data-id="${esc(m.id)}">Oui, retirer</button></div></div>`);
+}
+function resetSheet(m, code){
+  const msg = `Bonjour ${m.nom.split(" ")[0]}, voici ton code pour choisir un nouveau code secret dans l'application Igna Djongo : ${code}\n\nOuvre ${appUrl()} , touche « Code oublié ? », puis entre ton numéro, ce code et ton nouveau code à 4 chiffres.`;
+  openSheet("Nouveau code", `
+    <p style="margin:0">Envoie ce code à <b>${esc(m.nom)}</b>. Il s'en sert une seule fois pour choisir son nouveau code secret.</p>
+    <div class="card" style="text-align:center"><span class="num" style="font-family:var(--font-display);font-size:2.4rem;letter-spacing:.2em">${esc(code)}</span></div>
+    <a class="btn wa" href="https://wa.me/${esc(waNumber(m.tel))}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">${ICONS.wa}Envoyer sur WhatsApp</a>
+    <p class="muted" style="margin:0;font-size:.85rem">S'il avait un rôle (trésorier, responsable), il le retrouve tout seul avec son nouveau code.</p>`);
+}
+const relanceKey = () => "igna-djongo-relance-" + curMonth;
+const relanceDone = () => { try { return JSON.parse(localStorage.getItem(relanceKey()) || "[]"); } catch(e){ return []; } };
+const markRelance = id => { try { const l = relanceDone(); if (!l.includes(id)) l.push(id); localStorage.setItem(relanceKey(), JSON.stringify(l)); } catch(e){} };
+function relanceSheet(){
+  const ml = monthLabel(curMonth).toLowerCase(), mois = (/^[aeiouy]/.test(ml) ? "d'" : "de ") + ml, url = appUrl(), done = relanceDone();
+  const late = state.members.filter(m => m.id !== (me() || {}).id && !isUpToDate(m.id, curMonth) && !pendingFor(m.id, curMonth).length).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
+  const msgFor = m => { const dv = devOfMember(m), reste = Math.max(0, expectedOf(m) - paidMonth(m.id, curMonth));
+    return `Bonjour ${m.nom.split(" ")[0]}, petit rappel de l'Igna Djongo : ta cotisation ${mois} (${money(reste, dv)}) n'est pas encore arrivée. Quand tu as payé, touche « J'ai cotisé » dans l'application : ${url}\nMerci et à bientôt !`; };
+  const groupe = `Rappel de l'Igna Djongo : la cotisation ${mois} (${money(state.settings.mensuelle, "EUR")} pour la diaspora, ${money(state.settings.mensuelleKMF, "KMF")} aux Comores) est à verser au trésorier. Quand c'est fait, touchez « J'ai cotisé » dans l'application : ${url}\nMerci à tous !`;
+  openSheet("Relancer les retards", `
+    <p style="margin:0">Touche un nom pour lui envoyer un petit rappel sur WhatsApp. Le message est déjà écrit, tu peux le modifier avant d'envoyer.</p>
+    <a class="btn ghost" href="https://wa.me/?text=${encodeURIComponent(groupe)}" target="_blank" rel="noopener">${ICONS.wa}Rappel pour le groupe (sans noms)</a>
+    <div class="list">${late.map(m => `<a class="item" href="https://wa.me/${esc(waNumber(m.tel))}?text=${encodeURIComponent(msgFor(m))}" target="_blank" rel="noopener" data-action="relance-sent" data-id="${esc(m.id)}" style="color:inherit;text-decoration:none">${avatar(m)}
+      <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(money(Math.max(0, expectedOf(m) - paidMonth(m.id, curMonth)), devOfMember(m)))} à payer</span></span>
+      <span class="pill ${done.includes(m.id) ? "ok" : "wait"}" data-relance="${esc(m.id)}">${done.includes(m.id) ? "Envoyé ✓" : "Relancer"}</span></a>`).join("") || `<div class="empty">Personne à relancer : tout le monde a payé ou attend une confirmation.</div>`}</div>`);
+}
+function movementSheet(id){
+  const p = state.payments.find(x => x.id === id); if (!p) return;
+  const m = p.memberId ? memberById(p.memberId) : null;
+  openSheet(isOut(p) ? "Sortie de caisse" : "Paiement", `
+    <div class="card stack" style="gap:8px">
+      <span class="amt ${isOut(p)?"out":"in"} num" style="font-family:var(--font-display);font-size:2rem">${isOut(p)?"−":"+"}${esc(money(p.montant, devOfPay(p)))}</span>${devOfPay(p)==="KMF" ? `<span class="muted num">environ ${esc(money(Math.round(toEur(p.montant,"KMF")),"EUR"))}</span>` : ""}
+      ${m ? `<span><b>${esc(m.nom)}</b> · ${esc(m.famille)}</span>` : ""}
+      <span>${esc(p.motif || CATS[p.cat])}</span>
+      <span class="muted">${esc(CATS[p.cat])} · ${esc(dateLabel(p.date))} ${esc(yearOf(p.date))}</span>
+    </div>
+    ${canPay() ? `<button class="btn danger" type="button" data-action="ask-delete">Supprimer ce mouvement</button>` : ""}
+    <div class="confirm" id="confirm-del" hidden><span>Supprimer ce mouvement ? Le total de la caisse sera recalculé.</span>
+      <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="delete-movement" data-id="${esc(p.id)}">Oui, supprimer</button></div></div>`);
+}
+function settingsSheet(){
+  const manage = canPay() || isAdmin();
+  const accounts = state.members.filter(m => m.uid).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
+  const shareText = `Rejoins l'application de l'Igna Djongo : ${location.href.split("#")[0]}\nCrée ton compte avec ton numéro de téléphone et le code de l'igna : ${state.invite}`;
+  const myRoles = [isAdmin() ? "responsable de l'application" : "", canPay() ? "trésorier (tu enregistres les paiements)" : ""].filter(Boolean).join(" et ");
+  const mine = me();
+  openSheet("Réglages", `
+  ${mine ? `<div class="section"><h2>Mon profil</h2><div class="list"><button class="item" type="button" data-action="my-profile">${avatar(mine)}<span class="body"><span class="name">${esc(mine.nom)}</span><span class="sub">${okPhoto(mine.photo) ? "Voir ou changer ma photo" : "Ajouter ma photo"}</span></span></button></div></div>` : ""}
+  <div class="section"><h2>Cotisation mensuelle</h2>
+  ${manage ? `<form id="settings-form" class="stack" novalidate>
+    <div class="two"><div class="field"><label for="set-amount">Diaspora (€)</label><input id="set-amount" name="mensuelle" type="number" inputmode="decimal" min="1" step="1" value="${esc(state.settings.mensuelle)}"></div>
+      <div class="field"><label for="set-amount-kmf">Comores (FC)</label><input id="set-amount-kmf" name="mensuelleKMF" type="number" inputmode="numeric" min="1" step="1" value="${esc(state.settings.mensuelleKMF)}"></div></div>
+    <span class="hint">Un membre est « à jour » quand il a versé au moins ce montant dans le mois.</span>
+    <button class="btn primary" type="submit">Enregistrer</button>
+  </form>` : `<div class="card num"><b>${esc(money(state.settings.mensuelle,"EUR"))}</b> par mois dans la diaspora, <b>${esc(money(state.settings.mensuelleKMF,"KMF"))}</b> aux Comores.</div>`}
+  </div>
+  <div class="section"><h2>Code de l'igna</h2>
+    <div class="phone-line"><span>${esc(state.invite || "—")}</span></div>
+    <span class="hint">Les nouveaux en ont besoin pour créer leur compte. Ne le donne qu'aux membres de l'igna.</span>
+    ${state.invite ? `<a class="btn wa" href="https://wa.me/?text=${encodeURIComponent(shareText)}" target="_blank" rel="noopener">${ICONS.wa}Inviter sur WhatsApp</a>` : ""}
+    ${isAdmin() ? `<form id="invite-form" class="stack" novalidate><div class="field"><label for="inv-code">Changer le code</label><input id="inv-code" name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Nouveau code"></div>
+      <span class="hint">L'ancien code ne marchera plus pour créer un compte. Ceux qui ont déjà un compte ne sont pas touchés.</span>
+      <p class="field hint" id="inv-error" hidden style="color:var(--bad)"></p><button class="btn ghost" type="submit">Changer le code</button></form>` : ""}
+  </div>
+  ${isAdmin() ? `<div class="section"><h2>Qui fait quoi</h2>
+    <form id="roles-form" class="stack" novalidate>
+      <span class="hint">Coche qui peut <b>enregistrer les paiements</b> (trésorier) et qui est <b>responsable</b> (peut gérer les membres, le code de l'igna et ces réglages).</span>
+      <div class="list">${accounts.map(m => `<div class="item" style="flex-wrap:wrap">${avatar(m)}<span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.role || "Membre")}</span></span>
+        <span style="display:flex;flex-direction:column;gap:4px;font-size:.85rem">
+          <label><input type="checkbox" name="t" value="${esc(m.uid)}" ${state.roles.tresoriers.includes(m.uid) ? "checked" : ""}> Trésorier</label>
+          <label><input type="checkbox" name="a" value="${esc(m.uid)}" ${state.roles.admins.includes(m.uid) ? "checked" : ""}> Responsable</label></span></div>`).join("") || `<div class="empty">Personne n'a encore de compte.</div>`}</div>
+      <p class="field hint" id="roles-error" hidden style="color:var(--bad)"></p>
+      <button class="btn primary" type="submit">Enregistrer</button>
+    </form></div>` : ""}
+  <div class="section"><h2>Mon compte</h2>
+    ${myRoles ? `<span class="hint">Tu es ${esc(myRoles)}.</span>` : ""}
+    ${me() ? `<button class="btn ghost" type="button" data-action="my-profile">Voir mon profil</button>` : ""}
+    <button class="btn ghost" type="button" data-action="logout">Se déconnecter</button>
+  </div>
+  ${ONLINE ? "" : `<div class="section"><h2>Démonstration</h2>
+    <button class="btn ghost" type="button" data-action="ask-delete">Remettre les données d'exemple</button>
+    <div class="confirm" id="confirm-del" hidden><span>Effacer tout ce qui a été saisi sur ce téléphone et revenir aux exemples ?</span>
+      <div class="btn-row"><button class="btn ghost" type="button" data-action="cancel-delete">Annuler</button><button class="btn danger" type="button" data-action="reset">Oui, remettre</button></div></div>
+    <button class="btn ghost" type="button" data-action="clear-all">Partir d'une liste vide</button>
+  </div>`}`);
+}
+
+/* ---------- actions ---------- */
+const actions = {
+  noop(){},
+  overlay(d, el, e){ if (e.target === el) closeSheet(); },
+  close: closeSheet,
+  settings: settingsSheet,
+  "goto-cot"(){ ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "membres"; render(); scrollTo(0,0); },
+  "goto-lieu"(d){ ui.tab = "membres"; ui.lieu = d.v; ui.fam = "all"; render(); scrollTo(0,0); },
+  caisse: caisseSheet,
+  licence: () => openSheet("Licence", `<p class="licence-text">${esc(LICENCE_TEXT)}</p>`),
+  confidentialite: () => openSheet("Confidentialité", CONFIDENTIALITE_HTML),
+  cgu: () => openSheet("Conditions d'utilisation", CGU_HTML),
+  "bilan-now"(){ bilanSheet(curMonth); },
+  "goto-hist"(){ closeSheet(); ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "mouvements"; render(); scrollTo(0,0); },
+  pay(d){ if (!canPay()) return toast("Seul le trésorier enregistre les paiements."); closeSheet(); paySheet(d.member || null); },
+  member(d){ memberSheet(d.id); },
+  movement(d){ closeSheet(); movementSheet(d.id); },
+  "add-member"(){ memberFormSheet(null); },
+  declare(){ closeSheet(); declareSheet(); },
+  "goto-decl"(){ ui.tab = "cotisations"; ui.cotView = "membres"; render(); scrollTo(0,0); },
+  "decl-ok"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc || !canPay()) return; store.confirmDecl(dc); render(); const m = memberById(dc.memberId); toast(`Paiement${m ? " de " + m.nom.split(" ")[0] : ""} confirmé`); },
+  "decl-no"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc) return; if (!confirm(canPay() ? "Refuser ce paiement ? Il sera retiré de la liste." : "Annuler ce paiement déclaré ?")) return; store.dropDecl(dc.id); render(); toast(canPay() ? "Paiement refusé" : "Déclaration annulée"); },
+  async "reset-pin"(d){ const m = memberById(d.id); if (!m || !isAdmin()) return;
+    if (!confirm(`Donner un nouveau code à ${m.nom} ? Son ancien code ne marchera plus.`)) return;
+    const code = await store.resetPin(m); if (!code) return;
+    resetSheet(m, code); },
+  "relance"(){ relanceSheet(); },
+  annonces(){ annoncesSheet(); render(); },
+  collectes(){ collectesSheet(); },
+  collecte(d){ closeSheet(); collecteSheet(d.id); },
+  "add-collecte"(){ if (!canManageCollecte()) return; closeSheet(); collecteFormSheet(null); },
+  "edit-collecte"(d){ if (!canManageCollecte()) return; closeSheet(); collecteFormSheet(collecteById(d.id)); },
+  "toggle-collecte"(d){ const c = collecteById(d.id); if (!c || !canManageCollecte()) return;
+    if (c.ouverte && !confirm("Terminer cette collecte ? Elle ne sera plus proposée dans les paiements.")) return;
+    const etait = c.ouverte; store.updateCollecte(c.id, {ouverte:!etait}); closeSheet(); render(); toast(etait ? "Collecte terminée" : "Collecte rouverte"); },
+  "pay-collecte"(d){ if (!canPay()) return; closeSheet(); paySheet(null, d.id); },
+  "declare-collecte"(d){ closeSheet(); declareSheet(d.id); },
+  annonce(d){ closeSheet(); annonceSheet(d.id); markAnnSeen(); render(); },
+  "add-annonce"(){ closeSheet(); annonceFormSheet(null); },
+  "edit-annonce"(d){ closeSheet(); annonceFormSheet(state.annonces.find(x => x.id === d.id)); },
+  "delete-annonce"(d){ store.deleteAnnonce(d.id); closeSheet(); render(); toast("Annonce supprimée"); },
+  bilan(){ bilanSheet(ui.month || curMonth); },
+  print(){ window.print(); },
+  "relance-sent"(d){ markRelance(d.id); const it = document.querySelector(`[data-relance="${CSS.escape(d.id)}"]`); if (it) it.textContent = "Envoyé ✓"; },
+  "remove-photo"(d){ store.setPhoto(d.id, null); memberSheet(d.id); render(); toast("Photo enlevée"); },
+  "my-profile"(){ const m = me(); if (m){ closeSheet(); memberSheet(m.id); } },
+  "edit-member"(d){ closeSheet(); memberFormSheet(memberById(d.id)); },
+  fam(d){ ui.fam = d.fam; render(); },
+  lieu(d){ ui.lieu = d.v; render(); },
+  vue(d){ ui.vue = d.v === "mosaique" ? "mosaique" : "liste"; try { localStorage.setItem("igna-djongo-vue", ui.vue); } catch(e){} render(); },
+  month(d){ const n = shiftMonth(ui.month, Number(d.d)); if (n <= curMonth){ ui.month = n; render(); } },
+  cotview(d){ ui.cotView = d.v; render(); },
+  "ask-delete"(){ const c = document.getElementById("confirm-del"); if (c){ c.hidden = false; c.scrollIntoView({block:"nearest"}); } },
+  "cancel-delete"(){ const c = document.getElementById("confirm-del"); if (c) c.hidden = true; },
+  "delete-member"(d){ const m = memberById(d.id); if (m) store.deleteMember(m); closeSheet(); render(); toast("Membre retiré"); },
+  "delete-movement"(d){ const p = state.payments.find(x => x.id === d.id); if (p) store.deletePayment(p); closeSheet(); render(); toast("Mouvement supprimé"); },
+  chapter(d){ chapterSheet(d.id); },
+  "add-chapter"(){ chapterFormSheet(null); },
+  "edit-chapter"(d){ closeSheet(); chapterFormSheet(state.histoire.find(x => x.id === d.id)); },
+  "delete-chapter"(d){ store.deleteChapter(d.id); closeSheet(); render(); toast("Chapitre supprimé"); },
+  "auth-mode"(d){ authMode = d.v; render(); },
+  logout(){ closeSheet(); store.logout(); authMode = "login"; render(); scrollTo(0,0); toast("Tu es déconnecté"); },
+  "my-profile"(){ closeSheet(); if (me()) memberSheet(me().id); },
+  reset(){ if (ONLINE) return; state = seed(); save(); closeSheet(); render(); toast("Données d'exemple remises"); },
+  "clear-all"(){ if (ONLINE) return; setSession(null); authMode = "signup"; state = {...emptyState(), settings:{...state.settings}}; save(); closeSheet(); ui.fam = "all"; render(); toast("Liste vide : le premier compte créé sera le responsable"); },
+  "fb-share"(d){
+    const ok = () => toast("Texte copié : colle-le dans ta publication Facebook");
+    try { navigator.clipboard.writeText(d.text).then(ok, () => {}); } catch(e){}
+  },
+  copy(d, el){
+    const done = () => toast("Numéro copié");
+    try { navigator.clipboard.writeText(d.text).then(done, () => selectPhone(el)); } catch(e){ selectPhone(el); }
+  }
+};
+function selectPhone(el){ const span = el.parentElement.querySelector("span"); const r = document.createRange(); r.selectNodeContents(span); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Numéro sélectionné, copie-le"); }
+
+document.addEventListener("click", e => {
+  const tab = e.target.closest("nav.tabs button");
+  if (tab){ if (tab.dataset.tab !== ui.tab) goTab(tab.dataset.tab); return; }
+  const el = e.target.closest("[data-action]"); if (!el) return;
+  const fn = actions[el.dataset.action]; if (fn) fn(el.dataset, el, e);
+});
+/* ---------- glisser le doigt pour changer d'onglet ---------- */
+const TABS = ["accueil","membres","cotisations","histoire"];
+const calm = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+function slideIn(dir){
+  const v = document.getElementById("view");
+  if (calm() || !dir){ v.style.transition = v.style.transform = v.style.opacity = ""; return; }
+  v.style.transition = "none"; v.style.transform = `translateX(${dir * 60}px)`; v.style.opacity = ".4";
+  v.offsetWidth;
+  v.style.transition = "transform .26s cubic-bezier(.2,.8,.2,1), opacity .26s ease-out";
+  v.style.transform = ""; v.style.opacity = "";
+}
+function goTab(name, fromDir){
+  const dir = fromDir != null ? fromDir : Math.sign(TABS.indexOf(name) - TABS.indexOf(ui.tab));
+  ui.tab = name; if (name === "cotisations") ui.month = ui.month || curMonth;
+  render(); scrollTo(0,0); slideIn(dir);
+}
+(() => {
+  const v = document.getElementById("view");
+  let g = null;
+  const blocked = t => document.querySelector(".overlay") || document.getElementById("tabs").hidden ||
+    !(t instanceof Element) || t.closest("nav.tabs,#fab,#sheet-root,input,textarea,select,[contenteditable],.chips.scroll,.no-swipe") ||
+    [...function*(){ for (let e = t; e && e !== document.body; e = e.parentElement) yield e; }()].some(e => e.scrollWidth > e.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(e).overflowX));
+  document.addEventListener("touchstart", e => {
+    g = null;
+    if (e.touches.length !== 1 || blocked(e.target)) return;
+    const t = e.touches[0];
+    g = {x:t.clientX, y:t.clientY, t:Date.now(), dx:0, mode:null};
+  }, {passive:true});
+  document.addEventListener("touchmove", e => {
+    if (!g) return;
+    if (e.touches.length !== 1){ cancel(); return; }
+    const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (!g.mode){
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      g.mode = Math.abs(dx) > Math.abs(dy) * 1.3 ? "x" : "y";
+      if (g.mode === "y"){ g = null; return; }
+      g.x = t.clientX; v.classList.add("swiping"); v.style.transition = "none";
+    }
+    if (e.cancelable) e.preventDefault();
+    const i = TABS.indexOf(ui.tab), edge = (dx > 0 && i === 0) || (dx < 0 && i === TABS.length - 1);
+    g.dx = t.clientX - g.x; const shown = edge ? g.dx / 4 : g.dx;
+    if (!calm()){ v.style.transform = `translateX(${shown}px)`; v.style.opacity = String(1 - Math.min(Math.abs(shown) / innerWidth, 1) * .5); }
+  }, {passive:false});
+  function cancel(){
+    if (g && g.mode === "x"){
+      v.style.transition = "transform .2s ease-out, opacity .2s ease-out"; v.style.transform = ""; v.style.opacity = "";
+    }
+    v.classList.remove("swiping"); g = null;
+  }
+  document.addEventListener("touchend", () => {
+    if (!g || g.mode !== "x"){ g = null; return; }
+    const i = TABS.indexOf(ui.tab), dir = g.dx < 0 ? 1 : -1, next = TABS[i + dir];
+    const fast = Math.abs(g.dx) > 40 && Math.abs(g.dx) / Math.max(Date.now() - g.t, 1) > .35;
+    if (!next || !(Math.abs(g.dx) > Math.min(innerWidth, 520) * .25 || fast)){ cancel(); return; }
+    v.classList.remove("swiping"); g = null;
+    if (calm()){ goTab(next, 0); return; }
+    v.style.transition = "transform .16s ease-in, opacity .16s ease-in";
+    v.style.transform = `translateX(${-dir * Math.min(innerWidth, 520) * .6}px)`; v.style.opacity = "0";
+    setTimeout(() => goTab(next, dir), 150);
+  });
+  document.addEventListener("touchcancel", cancel);
+})();
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && document.querySelector(".overlay")) closeSheet();
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches('.item[role="button"], .hero[role="button"]')){ e.preventDefault(); e.target.click(); }
+});
+document.addEventListener("submit", e => {
+  e.preventDefault();
+  if (e.target.id === "pay-form") submitPay(e.target);
+  else if (e.target.id === "member-form") submitMember(e.target);
+  else if (e.target.id === "declare-form") submitDeclare(e.target);
+  else if (e.target.id === "chapter-form") submitChapter(e.target);
+  else if (e.target.id === "annonce-form") submitAnnonce(e.target);
+  else if (e.target.id === "collecte-form") submitCollecte(e.target);
+  else if (e.target.id === "login-form") submitLogin(e.target);
+  else if (e.target.id === "renew-form") submitRenew(e.target);
+  else if (e.target.id === "signup-form") submitSignup(e.target);
+  else if (e.target.id === "join-form") submitJoin(e.target);
+  else if (e.target.id === "settings-form"){
+    const fd = new FormData(e.target); const v = parseFloat(String(fd.get("mensuelle")).replace(",", ".")), k = parseFloat(String(fd.get("mensuelleKMF")).replace(",", "."));
+    if (v > 0 && k > 0){ store.saveSettings({mensuelle:v, mensuelleKMF:k}); closeSheet(); render(); toast("Réglages enregistrés"); }
+  }
+  else if (e.target.id === "invite-form"){
+    const code = cleanCode(new FormData(e.target).get("code")); const err = e.target.querySelector("#inv-error");
+    if (!validCode(code)){ err.textContent = "Au moins 4 lettres ou chiffres, sans espace."; err.hidden = false; return; }
+    store.changeInvite(code); closeSheet(); toast("Nouveau code : " + code);
+  }
+  else if (e.target.id === "roles-form"){
+    const fd = new FormData(e.target); const r = {admins:fd.getAll("a").map(String), tresoriers:fd.getAll("t").map(String)};
+    const err = e.target.querySelector("#roles-error");
+    if (!r.admins.length){ err.textContent = "Il faut au moins un responsable."; err.hidden = false; return; }
+    store.saveRoles(r); closeSheet(); render(); toast("Rôles enregistrés");
+  }
+});
+document.addEventListener("change", async e => {
+  if (e.target.id !== "photo-input") return;
+  const file = e.target.files && e.target.files[0], id = e.target.dataset.id; if (!file) return;
+  toast("Préparation de la photo…");
+  let photo; try { photo = await shrinkPhoto(file); } catch(err){ return toast("Cette image ne marche pas. Essaie une autre photo."); }
+  store.setPhoto(id, photo); if (document.getElementById("photo-input")) memberSheet(id); render(); toast("Photo enregistrée");
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "search-members"){ ui.q = e.target.value; document.getElementById("member-list").innerHTML = memberListHTML(); }
+});
+document.querySelectorAll("[data-icon]").forEach(el => el.innerHTML = ICONS[el.dataset.icon]);
+render();
+if (ONLINE) fbInit();
+})();
+</script>
