@@ -272,6 +272,10 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 .signature{text-align:center;font-size:.75rem;color:var(--muted);padding:24px 0 8px;letter-spacing:.05em}
 .signature button{font:inherit;color:inherit;background:none;border:0;padding:6px 4px;margin:-6px 0;text-decoration:underline;cursor:pointer;letter-spacing:inherit}
 .licence-text{white-space:pre-line;line-height:1.55;font-size:.92rem;margin:0}
+.legal{line-height:1.55;font-size:.92rem}
+.hint .link{font:inherit;font-weight:700;padding:0}
+.legal h3{font-size:1rem;margin:16px 0 4px}
+.legal p{margin:0 0 8px}
 .toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 </style>
 </head>
@@ -307,7 +311,7 @@ window.IGNA_FIREBASE = {
 // Appli « Igna Djongo », conçue par M.M.B.T (2026). Tous droits réservés.
 (function(){
 "use strict";
-const SIGNATURE = `<footer class="signature">Conçue par M.M.B.T · 2026 · <button type="button" data-action="licence">Licence</button></footer>`;
+const SIGNATURE = `<footer class="signature">Conçue par M.M.B.T · 2026 · <button type="button" data-action="licence">Licence</button> · <button type="button" data-action="confidentialite">Confidentialité</button> · <button type="button" data-action="cgu">CGU</button></footer>`;
 const LICENCE_TEXT = `Igna Djongo
 Copyright (c) 2026 M.M.B.T. Tous droits réservés.
 
@@ -315,6 +319,41 @@ Ce logiciel (code, pages et textes) est la propriété de son auteur, MAABADI BE
 Toute copie, modification, diffusion ou réutilisation, totale ou partielle, est interdite sans l'accord écrit de l'auteur.
 
 Le SDK Firebase et les polices Google Fonts, chargés depuis leurs sites, restent sous leurs propres licences.`;
+const CONFIDENTIALITE_HTML = `<div class="legal">
+<p>Mise à jour : 11 octobre 2026.</p>
+<h3>Qui est responsable ?</h3>
+<p>L'application est utilisée par l'Igna Djongo pour gérer ses membres, ses cotisations, sa caisse et son histoire. Elle a été conçue par MAABADI BEN TAMOU Mohamed (M.M.B.T). Pour toute question sur tes données, adresse-toi au bureau de l'igna (président ou trésorier) ou écris à l'auteur de l'appli : <a href="mailto:kalmache1@gmail.com">kalmache1@gmail.com</a>.</p>
+<h3>Quelles données ?</h3>
+<p>Quand tu crées ton compte ou qu'un responsable t'ajoute : ton nom, ton numéro de téléphone, ta famille, ta ville et si tu vis aux Comores ou dans la diaspora, ainsi que ton rôle dans l'igna. Ensuite : les paiements et les mouvements de caisse enregistrés à ton nom, les paiements que tu déclares, et les textes que tu ajoutes (annonces, chapitres de l'histoire).</p>
+<p>Ton code secret n'est jamais stocké en clair : il sert seulement à te connecter.</p>
+<h3>Pourquoi ?</h3>
+<p>Uniquement pour faire vivre l'igna : savoir qui en fait partie, pouvoir se joindre, suivre les cotisations et la caisse, garder notre histoire. Les données ne sont ni vendues, ni louées, ni utilisées pour de la publicité. Cette utilisation repose sur l'intérêt légitime de l'igna à gérer ses membres et sur ton inscription volontaire.</p>
+<h3>Qui les voit ?</h3>
+<p>Seulement les membres connectés, qui ont reçu le code de l'igna. Seuls les responsables (président, trésorier) peuvent ajouter, modifier ou retirer des membres et des mouvements de caisse. Personne en dehors de l'igna n'y a accès.</p>
+<h3>Où sont-elles gardées ?</h3>
+<p>Dans la base Firebase de Google, qui gère aussi la connexion. Les pages de l'appli sont publiées par GitHub Pages et les polices d'écriture viennent de Google Fonts ; ces services voient l'adresse internet de ton téléphone quand tu ouvres l'appli. Ils peuvent traiter des données hors de l'Union européenne, avec les garanties prévues par le RGPD. Sur ton téléphone, l'appli garde seulement quelques réglages d'affichage.</p>
+<h3>Combien de temps ?</h3>
+<p>Tant que tu es membre de l'igna. Si tu quittes l'igna, un responsable peut te retirer de la liste, et tes informations sont alors effacées. Les mouvements de caisse peuvent être gardés pour que les comptes de l'igna restent justes.</p>
+<h3>Tes droits</h3>
+<p>Tu peux consulter, corriger ou faire effacer tes données, et t'opposer à leur utilisation, en le demandant au bureau de l'igna ou en écrivant à <a href="mailto:kalmache1@gmail.com">kalmache1@gmail.com</a>. Si tu penses que tes droits ne sont pas respectés, tu peux te plaindre auprès de la CNIL (cnil.fr).</p>
+</div>`;
+const CGU_HTML = `<div class="legal">
+<p>Mise à jour : 11 octobre 2026.</p>
+<h3>À quoi sert l'appli</h3>
+<p>L'appli Igna Djongo est réservée aux membres de l'Igna Djongo. Elle permet de voir les membres, de suivre les cotisations et la caisse, et de partager l'histoire de l'igna. Elle est gratuite.</p>
+<h3>Accès</h3>
+<p>Pour créer un compte, il faut le code de l'igna, donné sur le groupe WhatsApp. Ton code secret est personnel : ne le donne à personne. En cas d'oubli, un responsable peut te donner un nouveau code.</p>
+<h3>Ce que tu t'engages à faire</h3>
+<p>Donner des informations exactes, utiliser les numéros et informations des autres membres seulement pour la vie de l'igna, ne rien publier d'insultant, de faux ou qui ne concerne pas l'igna, et ne pas essayer d'accéder à ce qui ne t'est pas ouvert.</p>
+<h3>Rôle des responsables</h3>
+<p>Le bureau de l'igna (président, trésorier) gère les membres et la caisse. Il peut retirer un membre ou un contenu qui ne respecte pas ces règles.</p>
+<h3>Limites</h3>
+<p>L'appli est fournie telle quelle. Elle peut parfois être indisponible ou contenir des erreurs ; les comptes officiels restent ceux validés par le bureau. L'auteur ne peut pas être tenu responsable d'une perte de données ou d'un mauvais usage par un membre.</p>
+<h3>Propriété</h3>
+<p>Le code, les pages et les textes de l'appli appartiennent à leur auteur, MAABADI BEN TAMOU Mohamed (voir Licence). Les contenus ajoutés par les membres restent les leurs ; ils autorisent l'igna à les afficher dans l'appli.</p>
+<h3>Changements</h3>
+<p>Ces conditions peuvent évoluer ; la date en haut indique la dernière version. Continuer à utiliser l'appli vaut accord avec la version en cours.</p>
+</div>`;
 const KEY = "igna-djongo-maquette-v3";
 const CFG = window.IGNA_FIREBASE && window.IGNA_FIREBASE.apiKey ? window.IGNA_FIREBASE : null;
 const ONLINE = !!CFG;
@@ -1164,6 +1203,7 @@ function renderAuth(){
         <div class="field"><label for="su-pin2">Répète le code</label><input id="su-pin2" class="pin" name="pin2" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password"></div></div>
       <div class="field"><label for="su-code">Code de l'igna</label><input id="su-code" name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"><span class="hint">Il est donné sur le groupe WhatsApp de l'igna. Il évite que des inconnus entrent.</span></div>
       <p class="field hint" id="auth-error" hidden style="color:var(--bad)"></p>
+      <p class="hint" style="margin:0;font-size:.8rem;color:var(--muted)">En créant ton compte, tu acceptes les <button class="link" type="button" data-action="cgu">conditions d'utilisation</button> et la <button class="link" type="button" data-action="confidentialite">politique de confidentialité</button>.</p>
       <button class="btn primary" type="submit">Créer mon compte</button>
     </form>`}
   </div>`;
@@ -1475,6 +1515,8 @@ const actions = {
   "goto-lieu"(d){ ui.tab = "membres"; ui.lieu = d.v; ui.fam = "all"; render(); scrollTo(0,0); },
   caisse: caisseSheet,
   licence: () => openSheet("Licence", `<p class="licence-text">${esc(LICENCE_TEXT)}</p>`),
+  confidentialite: () => openSheet("Confidentialité", CONFIDENTIALITE_HTML),
+  cgu: () => openSheet("Conditions d'utilisation", CGU_HTML),
   "bilan-now"(){ bilanSheet(curMonth); },
   "goto-hist"(){ closeSheet(); ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "mouvements"; render(); scrollTo(0,0); },
   pay(d){ if (!canPay()) return toast("Seul le trésorier enregistre les paiements."); closeSheet(); paySheet(d.member || null); },
