@@ -92,6 +92,9 @@ h2{font-size:1.1rem;font-weight:800}
 .hero .flows{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.95rem}
 .hero .flows span{display:inline-flex;gap:6px;align-items:center}
 .hero .flows b{font-weight:700}
+.hero.tap{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s} .hero.tap:active{transform:scale(.985)}
+.hero .more{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;font-size:.88rem;font-weight:700;background:rgba(255,255,255,.16);border-radius:999px;padding:6px 10px 6px 12px}
+.hero .more svg{width:16px;height:16px}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
@@ -789,10 +792,11 @@ function renderAccueil(){
     ${canPay() && state.declarations.length ? `<button class="notice" type="button" data-action="goto-decl" style="border:0;text-align:left;color:var(--ink);background:var(--gold-soft)">${ICONS.info}<span><b>${state.declarations.length} paiement${state.declarations.length > 1 ? "s" : ""} à confirmer.</b> Touche ici pour les voir.</span></button>` : ""}
     ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
     ${annoncesCollectesSection()}
-    <section class="hero" aria-label="Total de la caisse">
+    <section class="hero tap" role="button" tabindex="0" data-action="caisse" aria-label="Total de la caisse, toucher pour voir le détail">
       <span class="label">Total en caisse</span>
       <div class="cash num"><div><span class="cur">Caisse en euros</span><b>${esc(money(t.cash.EUR, "EUR"))}</b></div><div><span class="cur">Caisse en francs comoriens</span><b>${esc(money(t.cash.KMF, "KMF"))}</b></div></div>
       <div class="flows num"><span>Au total, environ <b>${esc(money(Math.round(t.eur), "EUR"))}</b></span><span style="opacity:.8">1 € = 491,97 FC</span></div>
+      <span class="more">Voir le détail de la caisse ${ICONS.right}</span>
     </section>
     ${exampleNotice()}
     <section class="section">
@@ -969,6 +973,30 @@ function submitCollecte(form){
   store.addCollecte({...d, ouverte:true, auteurUid:myUid(), at:todayISO, ts:Date.now()}); toast("Collecte lancée"); closeSheet(); render();
 }
 
+/* ---------- détail de la caisse ---------- */
+function caisseSheet(){
+  const t = totals();
+  const row = (l, v) => `<div class="bilan-row"><span>${l}</span><b class="num">${v}</b></div>`;
+  const dev = (d, nom) => `<div class="card"><h3 style="margin:0 0 4px;font-size:1rem">${nom}</h3>
+    ${row("Entrées", `<span class="amt in">+${esc(money(t.inn[d], d))}</span>`)}${row("Sorties", `<span class="amt out">${t.out[d] ? "−" : ""}${esc(money(t.out[d], d))}</span>`)}${row("Reste en caisse", esc(money(t.cash[d], d)))}</div>`;
+  // d'où vient l'argent : par collecte quand le paiement en fait partie, sinon par catégorie
+  const src = {};
+  state.payments.filter(p => !isOut(p)).forEach(p => { const c = p.collecte ? collecteById(p.collecte) : null; const k = c ? "Collecte : " + c.titre : CATS[p.cat] || "Autre";
+    (src[k] = src[k] || bag())[devOfPay(p)] += p.montant; });
+  const srcRows = Object.entries(src).sort((a,b) => (b[1].EUR + toEur(b[1].KMF, "KMF")) - (a[1].EUR + toEur(a[1].KMF, "KMF")));
+  const pays = state.payments.filter(p => p.date.startsWith(curMonth));
+  const sorties = sortedPayments().filter(isOut).slice(0,5);
+  openSheet("La caisse en détail", `
+    <div class="card" style="text-align:center"><span class="muted">Au total, environ</span><div class="num" style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;line-height:1.2">${esc(money(Math.round(t.eur), "EUR"))}</div>
+      <span class="muted num" style="font-size:.85rem">${esc(multi(t.cash))} · 1 € = 491,97 FC</span></div>
+    ${dev("EUR", "En euros (diaspora)")}${dev("KMF", "En francs comoriens (Comores)")}
+    <div class="section"><h2>D'où vient l'argent</h2><div class="card">${srcRows.map(([k,b]) => row(esc(k), esc(multi(b)))).join("") || `<span class="muted">Aucune entrée pour l'instant.</span>`}</div></div>
+    <div class="section"><h2>${esc(monthLabel(curMonth))}</h2><div class="card">
+      ${row("Entrées du mois", `<span class="amt in">+${esc(multi(sumBag(pays.filter(p => !isOut(p)))))}</span>`)}${row("Sorties du mois", `<span class="amt out">${pays.some(isOut) ? "−" : ""}${esc(multi(sumBag(pays.filter(isOut))))}</span>`)}</div>
+      <button class="btn ghost" type="button" data-action="bilan-now">Bilan ${esc(deMois(curMonth))} à partager</button></div>
+    <div class="section"><h2>Dernières dépenses</h2><div class="list">${sorties.map(movementItem).join("") || `<div class="empty">Aucune dépense pour l'instant.</div>`}</div></div>
+    <button class="btn primary" type="button" data-action="goto-hist">Voir tous les mouvements</button>`);
+}
 /* ---------- bilan du mois ---------- */
 const deMois = mk => { const l = monthLabel(mk).toLowerCase(); return (/^[aeiouy]/.test(l) ? "d'" : "de ") + l; };
 function bilanData(mk){
@@ -1436,7 +1464,9 @@ const actions = {
   settings: settingsSheet,
   "goto-cot"(){ ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "membres"; render(); scrollTo(0,0); },
   "goto-lieu"(d){ ui.tab = "membres"; ui.lieu = d.v; ui.fam = "all"; render(); scrollTo(0,0); },
-  "goto-hist"(){ ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "mouvements"; render(); scrollTo(0,0); },
+  caisse: caisseSheet,
+  "bilan-now"(){ bilanSheet(curMonth); },
+  "goto-hist"(){ closeSheet(); ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "mouvements"; render(); scrollTo(0,0); },
   pay(d){ if (!canPay()) return toast("Seul le trésorier enregistre les paiements."); closeSheet(); paySheet(d.member || null); },
   member(d){ memberSheet(d.id); },
   movement(d){ closeSheet(); movementSheet(d.id); },
@@ -1569,7 +1599,7 @@ function goTab(name, fromDir){
 })();
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && document.querySelector(".overlay")) closeSheet();
-  if ((e.key === "Enter" || e.key === " ") && e.target.matches('.item[role="button"]')){ e.preventDefault(); e.target.click(); }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches('.item[role="button"], .hero[role="button"]')){ e.preventDefault(); e.target.click(); }
 });
 document.addEventListener("submit", e => {
   e.preventDefault();
