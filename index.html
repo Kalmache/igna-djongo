@@ -270,6 +270,8 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chapter .periode{color:var(--gold)}}
 :root[data-theme="dark"] .chapter .periode{color:var(--gold)}
 .signature{text-align:center;font-size:.75rem;color:var(--muted);padding:24px 0 8px;letter-spacing:.05em}
+.signature button{font:inherit;color:inherit;background:none;border:0;padding:6px 4px;margin:-6px 0;text-decoration:underline;cursor:pointer;letter-spacing:inherit}
+.licence-text{white-space:pre-line;line-height:1.55;font-size:.92rem;margin:0}
 .toast{position:fixed;z-index:60;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 </style>
 </head>
@@ -305,7 +307,14 @@ window.IGNA_FIREBASE = {
 // Appli « Igna Djongo », conçue par M.M.B.T (2026). Tous droits réservés.
 (function(){
 "use strict";
-const SIGNATURE = `<footer class="signature">Conçue par M.M.B.T · 2026</footer>`;
+const SIGNATURE = `<footer class="signature">Conçue par M.M.B.T · 2026 · <button type="button" data-action="licence">Licence</button></footer>`;
+const LICENCE_TEXT = `Igna Djongo
+Copyright (c) 2026 MAABADI BEN TAMOU Mohamed. Tous droits réservés.
+
+Ce logiciel (code, pages et textes) est la propriété de son auteur, MAABADI BEN TAMOU Mohamed.
+Toute copie, modification, diffusion ou réutilisation, totale ou partielle, est interdite sans l'accord écrit de l'auteur.
+
+Le SDK Firebase et les polices Google Fonts, chargés depuis leurs sites, restent sous leurs propres licences.`;
 const KEY = "igna-djongo-maquette-v3";
 const CFG = window.IGNA_FIREBASE && window.IGNA_FIREBASE.apiKey ? window.IGNA_FIREBASE : null;
 const ONLINE = !!CFG;
@@ -1465,6 +1474,7 @@ const actions = {
   "goto-cot"(){ ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "membres"; render(); scrollTo(0,0); },
   "goto-lieu"(d){ ui.tab = "membres"; ui.lieu = d.v; ui.fam = "all"; render(); scrollTo(0,0); },
   caisse: caisseSheet,
+  licence: () => openSheet("Licence", `<p class="licence-text">${esc(LICENCE_TEXT)}</p>`),
   "bilan-now"(){ bilanSheet(curMonth); },
   "goto-hist"(){ closeSheet(); ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "mouvements"; render(); scrollTo(0,0); },
   pay(d){ if (!canPay()) return toast("Seul le trésorier enregistre les paiements."); closeSheet(); paySheet(d.member || null); },
