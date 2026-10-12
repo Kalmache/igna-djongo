@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setMediaPlaybackRequiresUserGesture(true);
         s.setSupportMultipleWindows(false);
-        s.setUserAgentString(s.getUserAgentString() + " IgnaDjongoApp/1.0");
+        s.setUserAgentString(s.getUserAgentString() + " IgnaDjongoApp/1.1");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
 
@@ -108,8 +108,9 @@ public class MainActivity extends Activity {
         public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {
             if (!r.isForMainFrame()) return;
             String page = "<!doctype html><html lang='fr'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-                    + "<body style='font-family:sans-serif;background:#F1F5F2;color:#163;text-align:center;padding:60px 24px'>"
-                    + "<h2 style='color:#0E5A4A'>Igna Djongo</h2><p>Pas de connexion internet pour le moment.</p>"
+                    + "<style>body{background:#F1F5F2;color:#163}h2{color:#0E5A4A}@media(prefers-color-scheme:dark){body{background:#0B1411;color:#E5EEE9}h2{color:#E5B247}}</style>"
+                    + "<body style='font-family:sans-serif;text-align:center;padding:60px 24px'>"
+                    + "<h2>Igna Djongo</h2><p>Pas de connexion internet pour le moment.</p>"
                     + "<p><button style='background:#0E5A4A;color:#fff;border:0;border-radius:12px;padding:14px 24px;font-size:17px' "
                     + "onclick=\"location.href='" + HOME + "'\">Réessayer</button></p>"
                     + "<p style='color:#889;font-size:12px;margin-top:40px'>Conçue par M.M.B.T · 2026</p></body></html>";
