@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Téléphone en mode sombre : thème sombre, et le site suit (prefers-color-scheme: dark). -->
+    <color name="fond">#0B1411</color>
+    <style name="Theme.Igna" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/vert</item>
+        <item name="android:colorPrimaryDark">@color/vert</item>
+        <item name="android:colorAccent">@color/vert</item>
+        <item name="android:statusBarColor">@color/vert</item>
+        <item name="android:navigationBarColor">@color/fond</item>
+        <item name="android:windowBackground">@color/fond</item>
+    </style>
+</resources>
