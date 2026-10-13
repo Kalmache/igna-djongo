@@ -1289,7 +1289,7 @@ async function submitRenew(form){
   if (err) return authError(form, err);
   authMode = "login"; ui.tab = "accueil"; render(); scrollTo(0,0); toast("Nouveau code enregistré. Bienvenue !");
 }
-const WELCOME_MOTTOS = ["Karibu, tu es chez toi.", "Une seule famille, ici et en diaspora.", "Ensemble, on fait grandir l'igna."];
+const WELCOME_MOTTOS = ["Karibu, tu es chez toi.", "Une seule famille, aux Comores et en diaspora.", "Ensemble, on fait grandir l'igna."];
 const WELCOME_DECO = `<div class="motto" aria-hidden="true">${WELCOME_MOTTOS.map(t => `<span>${esc(t)}</span>`).join("")}</div><div class="waves" aria-hidden="true">${'<svg viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 18 Q25 4 50 18 T100 18 T150 18 T200 18 T250 18 T300 18 T350 18 T400 18 V40 H0 Z"/></svg>'.repeat(3)}</div>`;
 function renderAuth(){
   if (authMode === "renew") return renderRenew();
