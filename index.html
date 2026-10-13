@@ -144,6 +144,11 @@ img.avatar{object-fit:cover;background:var(--surface-2)}
 .photo-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .photo-btns .btn{padding:8px 14px;min-height:0;font-size:.9rem}
 .f0{background:#0E5A4A}.f1{background:#9C5B12}.f2{background:#2F5D8A}.f3{background:#8A3B57}.f4{background:#5B6B1F}.f5{background:#6A4C93}
+.selbar{position:sticky;top:8px;z-index:5;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)}
+.selbar .btn[disabled]{opacity:.45}
+.item .tick{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:#fff}
+.item .tick svg{width:15px;height:15px}
+.item.picked{background:var(--surface-2)} .item.picked .tick{background:var(--bad);border-color:var(--bad)}
 .mv-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none}
 .mv-icon.in{background:var(--ok-soft);color:var(--ok)} .mv-icon.out{background:var(--bad-soft);color:var(--bad)}
 .mv-icon svg{width:20px;height:20px}
@@ -398,6 +403,7 @@ const KEY = "igna-djongo-maquette-v3";
 const CFG = window.IGNA_FIREBASE && window.IGNA_FIREBASE.apiKey ? window.IGNA_FIREBASE : null;
 const ONLINE = !!CFG;
 const ICONS = {
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>',
   users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.8c2 .7 3.2 2.4 3.5 5.2"/></svg>',
   wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11"/><path d="M16 13.5h4"/></svg>',
@@ -709,6 +715,11 @@ const store = {
     fb.db.doc("ledger/" + p.date.slice(0,7)).set({items: FV().arrayUnion(p)}, {merge:true}).catch(fail); },
   deletePayment(p){ if (!ONLINE){ state.payments = state.payments.filter(x => x.id !== p.id); save(); return; }
     fb.db.doc("ledger/" + p.date.slice(0,7)).update({items: FV().arrayRemove(p)}).catch(fail); },
+  deletePayments(list){ const ids = new Set(list.map(p => p.id));
+    if (!ONLINE){ state.payments = state.payments.filter(x => !ids.has(x.id)); save(); return; }
+    const byMonth = {}; list.forEach(p => (byMonth[p.date.slice(0,7)] = byMonth[p.date.slice(0,7)] || []).push(p));
+    const b = fb.db.batch(); Object.entries(byMonth).forEach(([mk, items]) => b.update(fb.db.doc("ledger/" + mk), {items: FV().arrayRemove(...items)}));
+    b.commit().catch(fail); },
   addCollecte(c){ if (!ONLINE){ state.collectes.push({id:uid("c"), ...c}); save(); return; } fb.db.collection("collectes").add(c).catch(fail); },
   updateCollecte(id, d){ if (!ONLINE){ Object.assign(state.collectes.find(x => x.id === id), d); save(); return; } fb.db.doc("collectes/" + id).update(d).catch(fail); },
   addAnnonce(a){ if (!ONLINE){ state.annonces.push({id:uid("a"), ...a}); save(); return; } fb.db.collection("annonces").add(a).catch(fail); },
@@ -889,13 +900,15 @@ function submitDeclare(form){
   store.declare({memberId:m.id, uid:myUid(), montant, devise: f.get("devise") === "KMF" ? "KMF" : "EUR", date, cat, moyen, note:String(f.get("note") || "").trim().slice(0,200), at:todayISO, ...(pc.collecte ? {collecte:pc.collecte} : {})});
   closeSheet(); render(); toast("Merci ! Le trésorier va confirmer ton paiement.");
 }
-function movementItem(p){
+function movementItem(p, pick){
+  const sel = pick instanceof Set ? pick : null; // .map(movementItem) passe l'index en 2e argument
   const m = p.memberId ? memberById(p.memberId) : null;
   const who = m ? m.nom : (isOut(p) ? "Caisse de l'igna" : "Anonyme");
   const title = isOut(p) ? p.motif : who;
   const sub = isOut(p) ? `${CATS.sortie} · ${dateLabel(p.date)}` : `${esc(p.motif || CATS[p.cat])} · ${esc(dateLabel(p.date))}`;
-  return `<button class="item" type="button" data-action="movement" data-id="${esc(p.id)}">
-    <span class="mv-icon ${isOut(p)?"out":"in"}">${isOut(p)?ICONS.up:ICONS.down}</span>
+  const on = sel && sel.has(p.id);
+  return `<button class="item${on ? " picked" : ""}" type="button" data-action="${sel ? "mv-toggle" : "movement"}" data-id="${esc(p.id)}"${sel ? ` aria-pressed="${on}"` : ""}>
+    ${sel ? `<span class="tick" aria-hidden="true">${on ? ICONS.check : ""}</span>` : ""}<span class="mv-icon ${isOut(p)?"out":"in"}">${isOut(p)?ICONS.up:ICONS.down}</span>
     <span class="body"><span class="name">${esc(title)}</span><span class="sub">${isOut(p) ? esc(sub) : sub}</span></span>
     <span class="amt ${isOut(p)?"out":"in"}">${isOut(p)?"−":"+"}${esc(money(p.montant, devOfPay(p)))}</span></button>`;
 }
@@ -1237,7 +1250,7 @@ function renderCotisations(){
         <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.famille)} · ${m.lieu === "comores" ? LIEUX.comores : LIEUX.diaspora}</span></span>
         ${up ? `<span class="pill ok num">Payé ${esc(money(paid, dv))}</span>` : pendingFor(m.id, mk).length ? `<span class="pill todo">À confirmer</span>` : `<span class="pill wait">${paid ? "Partiel " + esc(money(paid, dv)) : "À payer " + esc(money(expectedOf(m), dv))}</span>`}</button>`; }).join("")}</div>`;
   } else {
-    body = `<div class="list">${monthPays.map(movementItem).join("") || `<div class="empty">Aucun mouvement en ${esc(monthLabel(mk).toLowerCase())}.</div>`}</div>`;
+    body = mvSelectBar(monthPays) + `<div class="list">${monthPays.map(p => movementItem(p, ui.sel)).join("") || `<div class="empty">Aucun mouvement en ${esc(monthLabel(mk).toLowerCase())}.</div>`}</div>`;
   }
   return `<div class="topbar"><div class="titles"><span class="eyebrow">Igna Djongo</span><h1>Cotisations</h1></div><span class="muted num" style="text-align:right">${esc(money(state.settings.mensuelle,"EUR"))} ou ${esc(money(state.settings.mensuelleKMF,"KMF"))}<br>par mois</span></div>
   <div class="stack">
@@ -1256,6 +1269,17 @@ function renderCotisations(){
     ${(canPay() || isAdmin()) && mk === curMonth && ui.cotView === "membres" && ok < state.members.length ? `<button class="btn wa" type="button" data-action="relance">${ICONS.wa}Relancer les retards sur WhatsApp</button>` : ""}
     ${body}
   </div>`;
+}
+/* Supprimer plusieurs mouvements : le trésorier touche « Sélectionner », coche les mouvements du mois, puis « Supprimer ». */
+function mvSelectBar(list){
+  if (!canPay() || !list.length) return "";
+  if (!ui.sel) return `<div class="row-between"><span class="muted">${list.length} mouvement${list.length > 1 ? "s" : ""}</span><button class="link" type="button" data-action="mv-select">Sélectionner</button></div>`;
+  const n = list.filter(p => ui.sel.has(p.id)).length, all = n === list.length;
+  return `<div class="selbar"><div class="row-between"><button class="link" type="button" data-action="mv-all">${all ? "Tout décocher" : "Tout cocher"}</button>
+      <b class="num">${n} sélectionné${n > 1 ? "s" : ""}</b><button class="link" type="button" data-action="mv-cancel">Annuler</button></div>
+    <button class="btn danger" type="button" data-action="mv-ask-del" ${n ? "" : "disabled"}>Supprimer ${n ? n + " mouvement" + (n > 1 ? "s" : "") : ""}</button>
+    <div class="confirm" id="confirm-mv" hidden><span>Supprimer ${n} mouvement${n > 1 ? "s" : ""} ? Le total de la caisse sera recalculé.</span>
+      <div class="btn-row"><button class="btn ghost" type="button" data-action="mv-no">Annuler</button><button class="btn danger" type="button" data-action="mv-delete">Oui, supprimer</button></div></div></div>`;
 }
 /* Calendrier des mois : on touche le mois en haut des Cotisations pour sauter directement à n'importe quel mois. */
 const firstYear = () => Math.min(now.getFullYear() - 1, ...state.payments.map(p => Number(String(p.date).slice(0,4))).filter(y => y > 1900));
@@ -1440,7 +1464,7 @@ function render(){
   const fab = document.getElementById("fab");
   if (ui.tab === "membres"){ fab.innerHTML = ICONS.plus + "Ajouter un membre"; fab.dataset.action = "add-member"; }
   else if (ui.tab === "histoire"){ fab.innerHTML = ICONS.plus + "Ajouter un chapitre"; fab.dataset.action = "add-chapter"; }
-  else { fab.innerHTML = ICONS.plus + "Enregistrer un paiement"; fab.dataset.action = "pay"; delete fab.dataset.member; fab.hidden = !canPay(); }
+  else { fab.innerHTML = ICONS.plus + "Enregistrer un paiement"; fab.dataset.action = "pay"; delete fab.dataset.member; fab.hidden = !canPay() || !!ui.sel; }
   syncBack();
 }
 
@@ -1667,14 +1691,14 @@ const actions = {
   overlay(d, el, e){ if (e.target === el) closeSheet(); },
   close: closeSheet,
   settings: settingsSheet,
-  "goto-cot"(){ ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "membres"; render(); scrollTo(0,0); },
+  "goto-cot"(){ ui.tab = "cotisations"; ui.sel = null; ui.month = curMonth; ui.cotView = "membres"; render(); scrollTo(0,0); },
   "goto-lieu"(d){ ui.tab = "membres"; ui.lieu = d.v; ui.fam = "all"; render(); scrollTo(0,0); },
   caisse: caisseSheet,
   licence: () => openSheet("Licence", `<p class="licence-text">${esc(LICENCE_TEXT)}</p>`),
   confidentialite: () => openSheet("Confidentialité", CONFIDENTIALITE_HTML),
   cgu: () => openSheet("Conditions d'utilisation", CGU_HTML),
   "bilan-now"(){ bilanSheet(curMonth); },
-  "goto-hist"(){ closeSheet(); ui.tab = "cotisations"; ui.month = curMonth; ui.cotView = "mouvements"; render(); scrollTo(0,0); },
+  "goto-hist"(){ closeSheet(); ui.tab = "cotisations"; ui.sel = null; ui.month = curMonth; ui.cotView = "mouvements"; render(); scrollTo(0,0); },
   pay(d){ if (!canPay()) return toast("Seul le trésorier enregistre les paiements."); closeSheet(); paySheet(d.member || null); },
   member(d){ memberSheet(d.id); },
   movement(d){ closeSheet(); movementSheet(d.id); },
@@ -1711,11 +1735,19 @@ const actions = {
   fam(d){ ui.fam = d.fam; render(); },
   lieu(d){ ui.lieu = d.v; render(); },
   vue(d){ ui.vue = d.v === "mosaique" ? "mosaique" : "liste"; try { localStorage.setItem("igna-djongo-vue", ui.vue); } catch(e){} render(); },
-  month(d){ const n = shiftMonth(ui.month, Number(d.d)); if (n <= curMonth){ ui.month = n; render(); } },
+  month(d){ const n = shiftMonth(ui.month, Number(d.d)); if (n <= curMonth){ ui.month = n; ui.sel = null; render(); } },
   "pick-month"(){ monthPickerSheet(); },
   "pick-year"(d){ monthPickerSheet(d.y); },
-  "goto-month"(d){ if (/^\d{4}-\d{2}$/.test(d.m) && d.m <= curMonth){ ui.month = d.m; closeSheet(); render(); } },
-  cotview(d){ ui.cotView = d.v; render(); },
+  "goto-month"(d){ if (/^\d{4}-\d{2}$/.test(d.m) && d.m <= curMonth){ ui.month = d.m; ui.sel = null; closeSheet(); render(); } },
+  cotview(d){ ui.cotView = d.v; ui.sel = null; render(); },
+  "mv-select"(){ ui.sel = new Set(); render(); },
+  "mv-cancel"(){ ui.sel = null; render(); },
+  "mv-toggle"(d){ if (!ui.sel) return; ui.sel.has(d.id) ? ui.sel.delete(d.id) : ui.sel.add(d.id); render(); },
+  "mv-all"(){ const ids = sortedPayments().filter(p => p.date.startsWith(ui.month)).map(p => p.id); ui.sel = ids.every(id => ui.sel.has(id)) ? new Set() : new Set(ids); render(); },
+  "mv-ask-del"(){ const c = document.getElementById("confirm-mv"); if (c){ c.hidden = false; c.scrollIntoView({block:"nearest"}); } },
+  "mv-no"(){ const c = document.getElementById("confirm-mv"); if (c) c.hidden = true; },
+  "mv-delete"(){ const list = state.payments.filter(p => ui.sel && ui.sel.has(p.id) && p.date.startsWith(ui.month)); ui.sel = null;
+    if (list.length) store.deletePayments(list); render(); toast(list.length > 1 ? `${list.length} mouvements supprimés` : "Mouvement supprimé"); },
   "ask-delete"(){ const c = document.getElementById("confirm-del"); if (c){ c.hidden = false; c.scrollIntoView({block:"nearest"}); } },
   "cancel-delete"(){ const c = document.getElementById("confirm-del"); if (c) c.hidden = true; },
   "delete-member"(d){ const m = memberById(d.id); if (m) store.deleteMember(m); closeSheet(); render(); toast("Membre retiré"); },
@@ -1759,7 +1791,7 @@ function slideIn(dir){
 }
 function goTab(name, fromDir){
   const dir = fromDir != null ? fromDir : Math.sign(TABS.indexOf(name) - TABS.indexOf(ui.tab));
-  ui.tab = name; if (name === "cotisations") ui.month = ui.month || curMonth;
+  ui.tab = name; ui.sel = null; if (name === "cotisations") ui.month = ui.month || curMonth;
   render(); scrollTo(0,0); slideIn(dir);
 }
 (() => {
