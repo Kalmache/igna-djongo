@@ -117,11 +117,12 @@ service cloud.firestore {
 
     function validMember() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['nom', 'famille', 'tel', 'telKey', 'ville', 'lieu', 'role', 'uid', 'photo'])
+      return d.keys().hasOnly(['nom', 'famille', 'tel', 'telKey', 'ville', 'lieu', 'role', 'uid', 'photo', 'inscrit', 'modifie'])
         && str(d.nom, 120) && d.nom.size() > 0 && str(d.famille, 120) && str(d.tel, 40)
         && str(d.ville, 120) && d.lieu in ['comores', 'diaspora']
         && str(d.get('telKey', ''), 30) && str(d.get('role', ''), 60)
-        && str(d.get('photo', ''), 100000);
+        && str(d.get('photo', ''), 100000)
+        && str(d.get('inscrit', ''), 40) && str(d.get('modifie', ''), 40);
     }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
     match /members/{id} {
@@ -138,11 +139,11 @@ service cloud.firestore {
             && existsAfter(resetDoc(resource.data.telKey)))
         // la personne elle-même : ses informations et sa photo, pas son rôle ni le lien
         || (resource.data.get('uid', null) == me()
-            && changed().hasOnly(['nom', 'famille', 'tel', 'telKey', 'ville', 'lieu', 'photo']))
+            && changed().hasOnly(['nom', 'famille', 'tel', 'telKey', 'ville', 'lieu', 'photo', 'modifie']))
         // quelqu'un qui crée son compte et retrouve sa fiche : seulement si c'est son numéro
         || (resource.data.get('uid', null) == null && request.resource.data.uid == me()
             && telOk(resource.data.telKey)
-            && changed().hasOnly(['uid']))
+            && changed().hasOnly(['uid', 'inscrit', 'modifie']))
       );
       allow delete: if isAdmin();
     }

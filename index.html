@@ -132,7 +132,11 @@ img.avatar{object-fit:cover;background:var(--surface-2)}
 .tile .tn{width:100%;font-weight:700;font-size:.8rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .tile .dot{position:absolute;right:4%;bottom:4%;width:16px;height:16px;border-radius:50%;border:2px solid var(--surface)}
 .dot.ok{background:var(--ok)} .dot.todo{background:var(--gold-bright)} .dot.wait{background:#9AA5A0}
-.view-toggle{display:flex;justify-content:flex-end}
+.view-toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.view-toggle .tri{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);min-width:0;flex:1 1 180px}
+.view-toggle .tri select{flex:1;min-width:0;max-width:100%;min-height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:6px 8px;color:var(--ink);font-size:.85rem}
+.item .sub.when{font-size:.78rem}
+.when-line{font-size:.82rem;text-align:center}
 .view-toggle .seg{display:inline-grid;grid-template-columns:auto auto}
 .view-toggle .seg button{display:flex;align-items:center;gap:6px;padding:7px 12px;font-size:.85rem}
 .view-toggle svg{width:16px;height:16px}
@@ -397,6 +401,13 @@ const monthShort = mk => { const [y,m] = mk.split("-").map(Number); return new I
 /* une date doit avoir la forme 2026-10-10 ; sinon on n'affiche rien (une date abîmée ne doit pas bloquer l'appli) */
 const okISO = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
 const yearOf = iso => okISO(iso) ? iso.slice(0,4) : "";
+/* Moment d'inscription ou de modification d'une fiche : "AAAA-MM-JJ" ou date et heure complètes. */
+const okStamp = s => typeof s === "string" && /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?Z)?$/.test(s);
+const nowStamp = () => new Date().toISOString();
+const stampTime = s => { if (!okStamp(s)) return 0; const t = s.length === 10 ? new Date(s + "T12:00:00").getTime() : new Date(s).getTime(); return isFinite(t) ? t : 0; };
+const stampLabel = (s, dayOnly) => { const t = stampTime(s); if (!t) return ""; const d = new Date(t);
+  const day = new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short",year:"numeric"}).format(d);
+  return s.length === 10 || dayOnly ? day : `${day} à ${pad(d.getHours())} h ${pad(d.getMinutes())}`; };
 const dateLabel = iso => { if (!okISO(iso)) return ""; const [y,m,d] = iso.split("-").map(Number); return new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"short"}).format(new Date(y,m-1,d)); };
 const nf = new Intl.NumberFormat("fr-FR",{maximumFractionDigits:2});
 const RATE = 491.96775; /* parité fixe : 1 € = 491,96775 francs comoriens */
@@ -432,7 +443,7 @@ function seed(){
     ["Anrifa Mbaé","Famille Mbaé","Nice","+33 6 00 00 00 13","Membre"],
     ["Soilihi Mbaé","Famille Mbaé","Foumbouni","+269 300 00 14","Membre"]
   ];
-  const members = M.map((r,i) => ({id:"m"+(i+1), uid:"m"+(i+1), nom:r[0], famille:r[1], ville:r[2], tel:r[3], telKey:waNumber(r[3]), role:r[4], lieu:lieuGuess(r[3])}));
+  const members = M.map((r,i) => ({id:"m"+(i+1), uid:"m"+(i+1), nom:r[0], famille:r[1], ville:r[2], tel:r[3], telKey:waNumber(r[3]), role:r[4], lieu:lieuGuess(r[3]), inscrit:new Date(now.getTime() - (i*11 + 2) * 86400000 - i*3600000).toISOString()}));
   const payments = [];
   const devOf = id => { const m = members.find(x => x.id === id); return m && m.lieu === "comores" ? "KMF" : "EUR"; };
   const add = (memberId, montant, mk, day, cat, motif, devise) => payments.push({id:uid("p"), memberId, montant, devise: devise || devOf(memberId), date:`${mk}-${pad(day)}`, cat, motif});
@@ -493,8 +504,10 @@ const canEditMember = m => isAdmin() || canPay() || (m && m.uid && m.uid === myU
 const canDeleteChapter = c => isAdmin() || (c && c.auteurUid && c.auteurUid === myUid());
 const samePhone = (a, b) => waNumber(a) === waNumber(b) && waNumber(a).length >= 6;
 let authMode = "login";
-const ui = {tab:"accueil", month:curMonth, cotView:"membres", q:"", fam:"all", lieu:"all", vue:"liste"};
+const ui = {tab:"accueil", month:curMonth, cotView:"membres", q:"", fam:"all", lieu:"all", vue:"liste", tri:"nom"};
 try { if (localStorage.getItem("igna-djongo-vue") === "mosaique") ui.vue = "mosaique"; } catch(e){}
+const TRIS = {nom:"Nom (A à Z)", inscrit:"Inscription (plus récents d'abord)", modifie:"Dernière modification"};
+try { const t = localStorage.getItem("igna-djongo-tri"); if (TRIS[t]) ui.tri = t; } catch(e){}
 
 /* ---------- calculs ---------- */
 const memberById = id => state.members.find(m => m.id === id);
@@ -579,8 +592,20 @@ async function finishRenew(u, tel){
     b.delete(rs.ref); await b.commit();
   } catch(e){ console.error(e); }
 }
+/* Les comptes créés avant l'ajout de la date d'inscription : un responsable la retrouve
+   (jour où le compte a reçu l'accès) et l'écrit une fois dans la fiche. */
+let inscritFilled = false;
+async function fillInscrit(){
+  if (inscritFilled || !isAdmin()) return;
+  const todo = state.members.filter(m => m.uid && !okStamp(m.inscrit)); inscritFilled = true;
+  if (!todo.length) return;
+  try {
+    const at = {}; (await fb.db.collection("access").get()).docs.forEach(d => { at[d.id] = d.data().at; });
+    for (const m of todo) if (okStamp(at[m.uid])) await fb.db.doc("members/" + m.id).update({inscrit: at[m.uid]});
+  } catch(e){ console.warn(e); /* règles pas encore republiées : on réessaiera à la prochaine ouverture */ }
+}
 function fbListen(){
-  const done = k => { fb.loaded[k] = true; if (fb.status === "loading" && ["members","ledger","roles"].every(x => fb.loaded[x])) fb.status = "in"; if (fb.status === "in") liveRender(); };
+  const done = k => { fb.loaded[k] = true; if (fb.status === "loading" && ["members","ledger","roles"].every(x => fb.loaded[x])) fb.status = "in"; if (fb.status === "in"){ liveRender(); fillInscrit(); } };
   const onErr = e => { console.error(e); if (e && e.code === "permission-denied"){ fbStop(); fb.status = "noaccess"; render(); } };
   const L = (ref, fn, k) => fb.unsub.push(ref.onSnapshot(snap => { fn(snap); done(k); }, onErr));
   L(fb.db.collection("members"), q => { state.members = q.docs.map(d => ({...d.data(), id:d.id})); }, "members");
@@ -597,8 +622,12 @@ function fbListen(){
 
 /* Chaque écriture : en démo on modifie l'état et on garde sur le téléphone ;
    en ligne on écrit dans Firebase, et l'écran se met à jour tout seul. */
+/* Les fiches gardent le moment d'inscription (inscrit) et de dernière modification (modifie).
+   Si les règles de la base ne connaissent pas encore ces champs, on réécrit sans eux. */
+const withStamps = (write, d, stamps) => write({...d, ...stamps}).catch(e => { if (e && e.code === "permission-denied") return write(d); throw e; });
 const store = {
-  addMember(d){ if (!ONLINE){ state.members.push({id:uid("m"), ...d}); save(); return; } fb.db.collection("members").add(d).catch(fail); },
+  addMember(d){ const t = nowStamp(); if (!ONLINE){ state.members.push({id:uid("m"), ...d, inscrit:t, modifie:t}); save(); return; }
+    withStamps(x => fb.db.collection("members").add(x), d, {inscrit:t, modifie:t}).catch(fail); },
   declare(d){ if (!ONLINE){ state.declarations.push({id:uid("d"), ...d}); save(); return; } fb.db.collection("declarations").add(d).catch(fail); },
   dropDecl(id){ if (!ONLINE){ state.declarations = state.declarations.filter(x => x.id !== id); save(); return; } fb.db.doc("declarations/" + id).delete().catch(fail); },
   confirmDecl(dc){
@@ -607,10 +636,11 @@ const store = {
     if (!ONLINE){ state.payments.push(p); state.declarations = state.declarations.filter(x => x.id !== dc.id); save(); return; }
     const b = fb.db.batch(); b.set(fb.db.doc("ledger/" + p.date.slice(0,7)), {items: FV().arrayUnion(p)}, {merge:true}); b.delete(fb.db.doc("declarations/" + dc.id)); b.commit().catch(fail); },
   setPhoto(id, photo){ const m = memberById(id); if (!m) return;
-    if (!ONLINE){ if (photo) m.photo = photo; else delete m.photo; save(); return; }
+    if (!ONLINE){ if (photo) m.photo = photo; else delete m.photo; m.modifie = nowStamp(); save(); return; }
     if (photo) m.photo = photo; else delete m.photo;
-    fb.db.doc("members/" + id).update({photo: photo || FV().delete()}).catch(fail); },
-  updateMember(id, d){ if (!ONLINE){ Object.assign(memberById(id), d); save(); return; } fb.db.doc("members/" + id).update(d).catch(fail); },
+    withStamps(x => fb.db.doc("members/" + id).update(x), {photo: photo || FV().delete()}, {modifie:nowStamp()}).catch(fail); },
+  updateMember(id, d){ if (!ONLINE){ Object.assign(memberById(id), d, {modifie:nowStamp()}); save(); return; }
+    withStamps(x => fb.db.doc("members/" + id).update(x), d, {modifie:nowStamp()}).catch(fail); },
   deleteMember(m){
     const strip = r => ({admins:r.admins.filter(x => x !== m.uid), tresoriers:r.tresoriers.filter(x => x !== m.uid)});
     if (!ONLINE){ state.members = state.members.filter(x => x.id !== m.id); state.accounts = state.accounts.filter(a => a.memberId !== m.id); if (m.uid) state.roles = strip(state.roles); save(); return; }
@@ -699,7 +729,7 @@ const store = {
       let m = state.members.find(x => samePhone(x.tel, d.tel));
       if (m && state.accounts.some(a => a.memberId === m.id)) return "Ce numéro a déjà un compte. Connecte-toi.";
       if (!m){ m = {id:uid("m"), role:"Membre", ...d}; state.members.push(m); }
-      m.uid = m.id; state.accounts.push({memberId:m.id, pin});
+      m.uid = m.id; m.inscrit = m.modifie = nowStamp(); state.accounts.push({memberId:m.id, pin});
       if (first){ state.roles = {admins:[m.uid], tresoriers:[m.uid]}; state.invite = code; }
       save(); setSession(m.id); return null;
     }
@@ -717,7 +747,9 @@ const store = {
       }
       const q = await fb.db.collection("members").where("telKey", "==", waNumber(d.tel)).get();
       const free = q.docs.find(x => !x.data().uid);
-      if (free) await free.ref.update({uid:u}); else await fb.db.collection("members").add({...d, role:"Membre", uid:u});
+      const t = {inscrit:nowStamp(), modifie:nowStamp()};
+      if (free) await withStamps(x => free.ref.update(x), {uid:u}, t);
+      else await withStamps(x => fb.db.collection("members").add(x), {...d, role:"Membre", uid:u}, t);
     } catch(e){ console.error(e); }
     fb.signingUp = false; await fbEnter(u); return null;
   },
@@ -1074,12 +1106,23 @@ function bilanSheet(mk){
     <a class="btn wa no-print" href="https://wa.me/?text=${encodeURIComponent(bilanText(mk))}" target="_blank" rel="noopener">${ICONS.wa}Partager sur WhatsApp</a>
     <button class="btn ghost no-print" type="button" data-action="print">Imprimer pour l'assemblée</button>`);
 }
+/* Date affichée sous le nom quand la liste est classée par date */
+const inscritLabel = (m, dayOnly) => okStamp(m.inscrit) ? (m.uid ? "Inscrit le " : "Ajouté le ") + stampLabel(m.inscrit, dayOnly) : "Date d'inscription inconnue";
+const lastChange = m => okStamp(m.modifie) ? m.modifie : okStamp(m.inscrit) ? m.inscrit : "";
+const modifLabel = m => lastChange(m) ? "Modifié le " + stampLabel(lastChange(m), true) : "Date de modification inconnue";
+function sortMembers(list){
+  const byNom = (a,b) => a.nom.localeCompare(b.nom,"fr");
+  if (ui.tri === "nom") return [...list].sort(byNom);
+  const key = ui.tri === "inscrit" ? m => stampTime(m.inscrit) : m => stampTime(lastChange(m));
+  return [...list].sort((a,b) => (key(b) - key(a)) || byNom(a,b));
+}
 function memberRow(m){
   const ok = isUpToDate(m.id, curMonth);
   const role = m.role && m.role !== "Membre" ? ` · ${esc(m.role)}` : "";
+  const when = ui.tri === "inscrit" ? inscritLabel(m, true) : ui.tri === "modifie" ? modifLabel(m) : "";
   return `<div class="item" role="button" tabindex="0" data-action="member" data-id="${esc(m.id)}">
     ${avatar(m)}
-    <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.ville)}${role}</span>
+    <span class="body"><span class="name">${esc(m.nom)}</span><span class="sub">${esc(m.ville)}${role}</span>${when ? `<span class="sub when">${esc(when)}</span>` : ""}
       <span style="display:flex;gap:6px;flex-wrap:wrap">${ok ? `<span class="pill ok">À jour</span>` : pendingFor(m.id, curMonth).length ? `<span class="pill todo">À confirmer</span>` : `<span class="pill wait">Pas encore payé</span>`}${lieuPill(m)}</span></span>
     <span class="quick">
       <a href="${esc(telHref(m.tel))}" data-action="noop" aria-label="Appeler ${esc(m.nom)}">${ICONS.phone}</a>
@@ -1097,7 +1140,9 @@ function memberListHTML(){
   const list = state.members.filter(m => (ui.fam === "all" || m.famille === ui.fam) && (ui.lieu === "all" || m.lieu === ui.lieu) &&
     (!q || [m.nom, m.ville, m.tel, m.famille].some(v => String(v).toLowerCase().includes(q))));
   if (!list.length) return `<div class="list"><div class="empty">Aucun membre ne correspond.</div></div>`;
-  if (ui.vue === "mosaique") return `<div class="mosaic">${[...list].sort((a,b) => a.nom.localeCompare(b.nom,"fr")).map(memberTile).join("")}</div>`;
+  if (ui.vue === "mosaique") return `<div class="mosaic">${sortMembers(list).map(memberTile).join("")}</div>`;
+  // classée par date : une seule liste, du plus récent au plus ancien
+  if (ui.tri !== "nom") return `<div class="list">${sortMembers(list).map(memberRow).join("")}</div>`;
   return families().filter(f => list.some(m => m.famille === f)).map(f => {
     const ms = list.filter(m => m.famille === f).sort((a,b) => a.nom.localeCompare(b.nom,"fr"));
     return `<div class="section"><div class="group-label"><span>${esc(f)}</span><span class="num">${ms.length}</span></div><div class="list">${ms.map(memberRow).join("")}</div></div>`;
@@ -1113,7 +1158,7 @@ function renderMembres(){
       <button class="chip ${ui.fam==="all"?"on":""}" type="button" data-action="fam" data-fam="all">Toutes</button>
       ${fams.map(f => `<button class="chip ${ui.fam===f?"on":""}" type="button" data-action="fam" data-fam="${esc(f)}">${esc(f.replace(/^Famille /,""))}</button>`).join("")}
     </div>
-    <div class="view-toggle"><div class="seg" role="group" aria-label="Affichage">
+    <div class="view-toggle"><label class="tri"><span>Classer par</span><select id="tri-members" aria-label="Classer les membres par">${Object.entries(TRIS).map(([k,l]) => `<option value="${k}" ${ui.tri===k?"selected":""}>${esc(l)}</option>`).join("")}</select></label><div class="seg" role="group" aria-label="Affichage">
       <button type="button" class="${ui.vue==="liste"?"on":""}" data-action="vue" data-v="liste" aria-pressed="${ui.vue==="liste"}">${ICONS.liste}Liste</button>
       <button type="button" class="${ui.vue==="mosaique"?"on":""}" data-action="vue" data-v="mosaique" aria-pressed="${ui.vue==="mosaique"}">${ICONS.mosaique}Mosaïque</button></div></div>
     ${ui.vue === "mosaique" ? `<div class="hint" style="display:flex;gap:12px;flex-wrap:wrap;font-size:.75rem;color:var(--muted)"><span><span class="dot ok" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> À jour</span><span><span class="dot todo" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> À confirmer</span><span><span class="dot wait" style="display:inline-block;width:9px;height:9px;border-radius:50%;border:0"></span> Pas encore payé</span></div>` : ""}
@@ -1407,7 +1452,7 @@ function memberSheet(id){
   const total = multi(sumBag(pays));
   let upCount = 0; for (let i = -5; i <= 0; i++) if (isUpToDate(id, shiftMonth(curMonth,i))) upCount++;
   openSheet(m.nom, `
-    <div class="profile">${avatar(m,"xl")}${canEditMember(m) ? `<div class="photo-btns"><label class="btn ghost" for="photo-input">${ICONS.camera}${okPhoto(m.photo) ? "Changer la photo" : "Ajouter une photo"}</label>${okPhoto(m.photo) ? `<button class="btn ghost" type="button" data-action="remove-photo" data-id="${esc(m.id)}">Enlever</button>` : ""}<input id="photo-input" type="file" accept="image/*" data-id="${esc(m.id)}" hidden></div>` : ""}<span class="muted">${esc(m.famille)} · ${esc(m.ville)}</span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${lieuPill(m)}${m.role && m.role !== "Membre" ? `<span class="pill role">${esc(m.role)}</span>` : ""}${m.uid && state.roles.tresoriers.includes(m.uid) ? `<span class="pill ok">Enregistre les paiements</span>` : ""}${m.uid ? "" : `<span class="pill wait">Pas encore de compte</span>`}</span></div>
+    <div class="profile">${avatar(m,"xl")}${canEditMember(m) ? `<div class="photo-btns"><label class="btn ghost" for="photo-input">${ICONS.camera}${okPhoto(m.photo) ? "Changer la photo" : "Ajouter une photo"}</label>${okPhoto(m.photo) ? `<button class="btn ghost" type="button" data-action="remove-photo" data-id="${esc(m.id)}">Enlever</button>` : ""}<input id="photo-input" type="file" accept="image/*" data-id="${esc(m.id)}" hidden></div>` : ""}<span class="muted">${esc(m.famille)} · ${esc(m.ville)}</span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${lieuPill(m)}${m.role && m.role !== "Membre" ? `<span class="pill role">${esc(m.role)}</span>` : ""}${m.uid && state.roles.tresoriers.includes(m.uid) ? `<span class="pill ok">Enregistre les paiements</span>` : ""}${m.uid ? "" : `<span class="pill wait">Pas encore de compte</span>`}</span><span class="muted when-line">${esc(inscritLabel(m))}${okStamp(m.modifie) ? `<br>Dernière modification le ${esc(stampLabel(m.modifie))}` : ""}</span></div>
     <div class="phone-line"><span>${esc(m.tel)}</span><button class="icon-btn" type="button" data-action="copy" data-text="${esc(m.tel)}" aria-label="Copier le numéro">${ICONS.copy}</button></div>
     <div class="btn-row"><a class="btn ghost" href="${esc(telHref(m.tel))}">${ICONS.phone}Appeler</a><a class="btn wa" href="https://wa.me/${esc(waNumber(m.tel))}" target="_blank" rel="noopener">${ICONS.wa}WhatsApp</a></div>
     <div class="stats"><div class="stat"><span class="muted">Total versé</span><b class="num" style="font-size:1.1rem">${esc(total)}</b></div>
@@ -1682,6 +1727,7 @@ document.addEventListener("submit", e => {
   }
 });
 document.addEventListener("change", async e => {
+  if (e.target.id === "tri-members"){ ui.tri = TRIS[e.target.value] ? e.target.value : "nom"; try { localStorage.setItem("igna-djongo-tri", ui.tri); } catch(_){} document.getElementById("member-list").innerHTML = memberListHTML(); return; }
   if (e.target.id !== "photo-input") return;
   const file = e.target.files && e.target.files[0], id = e.target.dataset.id; if (!file) return;
   toast("Préparation de la photo…");
