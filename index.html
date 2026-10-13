@@ -1351,7 +1351,7 @@ function render(){
     else if (st === "error") v.innerHTML = statusView("Pas de connexion", "L'application n'arrive pas à joindre internet. Vérifie ta connexion puis rouvre l'application.");
     else v.innerHTML = statusView("Chargement…", "Un instant, on récupère les informations de l'igna.");
     v.insertAdjacentHTML("beforeend", SIGNATURE);
-    return;
+    syncBack(); return;
   }
   v.innerHTML = ui.tab === "accueil" ? renderAccueil() : ui.tab === "membres" ? renderMembres() : ui.tab === "histoire" ? renderHistoire() : renderCotisations();
   v.insertAdjacentHTML("beforeend", SIGNATURE);
@@ -1360,6 +1360,7 @@ function render(){
   if (ui.tab === "membres"){ fab.innerHTML = ICONS.plus + "Ajouter un membre"; fab.dataset.action = "add-member"; }
   else if (ui.tab === "histoire"){ fab.innerHTML = ICONS.plus + "Ajouter un chapitre"; fab.dataset.action = "add-chapter"; }
   else { fab.innerHTML = ICONS.plus + "Enregistrer un paiement"; fab.dataset.action = "pay"; delete fab.dataset.member; fab.hidden = !canPay(); }
+  syncBack();
 }
 
 /* ---------- feuilles ---------- */
@@ -1370,8 +1371,37 @@ function openSheet(title, html, onMount){
     <span class="grabber"></span><div class="sheet-head"><h2>${esc(title)}</h2><button class="icon-btn" type="button" data-action="close" aria-label="Fermer">${ICONS.x}</button></div>${html}</div></div>`;
   if (onMount) sheetCleanup = onMount(root.querySelector(".sheet")) || null;
   const first = root.querySelector("input,select"); if (first && !("ontouchstart" in window)) first.focus();
+  syncBack();
 }
-function closeSheet(){ document.getElementById("sheet-root").innerHTML = ""; if (sheetCleanup) sheetCleanup(); sheetCleanup = null; }
+function closeSheet(){ document.getElementById("sheet-root").innerHTML = ""; if (sheetCleanup) sheetCleanup(); sheetCleanup = null; syncBack(); }
+
+/* Bouton retour du téléphone : il ferme d'abord la fenêtre ouverte, puis revient aux onglets
+   visités avant (jusqu'à la Caisse), et c'est seulement depuis la Caisse qu'il quitte l'appli.
+   Pour ça, on garde une seule page « retour » dans l'historique tant qu'il y a où revenir. */
+const nav = {stack:[], last:null, guard:false, skip:false, back:false};
+const sheetOpen = () => !!document.querySelector("#sheet-root .overlay");
+const signedIn = () => (ONLINE ? fb.status : (myUid() ? "in" : "out")) === "in";
+const canGoBack = () => sheetOpen() || (signedIn() ? ui.tab !== "accueil" || nav.stack.length > 0 : authMode !== "login");
+function syncBack(){
+  if (!signedIn()){ nav.stack = []; nav.last = null; }
+  else {
+    if (nav.last && nav.last !== ui.tab && !nav.back) nav.stack.push(nav.last);
+    nav.stack = nav.stack.filter((t, i, a) => t !== ui.tab && a.lastIndexOf(t) === i).slice(-10);
+    nav.last = ui.tab;
+  }
+  if (nav.skip) return; // un retour en arrière est en cours : on refait le point quand il arrive
+  const want = canGoBack();
+  if (want && !nav.guard){ try { history.pushState({igna:1}, ""); nav.guard = true; } catch(e){} }
+  else if (!want && nav.guard){ nav.guard = false; nav.skip = true; history.back(); }
+}
+addEventListener("popstate", () => {
+  if (nav.skip){ nav.skip = false; syncBack(); return; }
+  nav.guard = false;
+  if (sheetOpen()) closeSheet();
+  else if (signedIn()){ nav.back = true; goTab(nav.stack.pop() || "accueil"); nav.back = false; }
+  else if (authMode !== "login"){ authMode = "login"; render(); }
+  syncBack();
+});
 function toast(msg){ const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2200); }
 
 function paySheet(memberId, collecteId){
