@@ -592,16 +592,36 @@ async function finishRenew(u, tel){
     b.delete(rs.ref); await b.commit();
   } catch(e){ console.error(e); }
 }
-/* Les comptes créés avant l'ajout de la date d'inscription : un responsable la retrouve
-   (jour où le compte a reçu l'accès) et l'écrit une fois dans la fiche. */
+/* Fiches créées avant l'ajout de la date d'inscription (ou avec le jour seulement) :
+   un responsable retrouve le moment exact, à la seconde près, grâce à l'heure de création
+   que Firestore garde pour chaque document (le compte dans access/, sinon la fiche),
+   et l'écrit une fois dans la fiche. */
 let inscritFilled = false;
+async function createTimes(coll, field){ // id du document → moment de sa création
+  const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(window.IGNA_FIREBASE.projectId)}/databases/(default)/documents/${coll}`;
+  const token = await fb.auth.currentUser.getIdToken(), out = {}; let page = "";
+  do {
+    const r = await fetch(`${base}?pageSize=300&mask.fieldPaths=${field}${page ? "&pageToken=" + encodeURIComponent(page) : ""}`, {headers:{Authorization:"Bearer " + token}});
+    if (!r.ok) throw new Error("Firestore " + r.status);
+    const j = await r.json();
+    (j.documents || []).forEach(d => { const t = new Date(d.createTime); if (d.name && isFinite(t)) out[d.name.split("/").pop()] = t.toISOString(); });
+    page = typeof j.nextPageToken === "string" ? j.nextPageToken : "";
+  } while (page);
+  return out;
+}
 async function fillInscrit(){
-  if (inscritFilled || !isAdmin()) return;
-  const todo = state.members.filter(m => m.uid && !okStamp(m.inscrit)); inscritFilled = true;
+  if (inscritFilled || !isAdmin() || !fb.auth.currentUser) return;
+  const todo = state.members.filter(m => !okStamp(m.inscrit) || m.inscrit.length === 10); inscritFilled = true;
   if (!todo.length) return;
+  let acc = {}, mem = {}, at = {};
+  try { acc = await createTimes("access", "code"); } catch(e){ console.warn(e); }
+  try { mem = await createTimes("members", "nom"); } catch(e){ console.warn(e); }
+  if (!Object.keys(acc).length) try { (await fb.db.collection("access").get()).docs.forEach(d => { at[d.id] = d.data().at; }); } catch(e){ console.warn(e); }
   try {
-    const at = {}; (await fb.db.collection("access").get()).docs.forEach(d => { at[d.id] = d.data().at; });
-    for (const m of todo) if (okStamp(at[m.uid])) await fb.db.doc("members/" + m.id).update({inscrit: at[m.uid]});
+    for (const m of todo){
+      const t = (m.uid && acc[m.uid]) || (m.uid && okStamp(at[m.uid]) && at[m.uid]) || mem[m.id] || "";
+      if (okStamp(t) && t !== m.inscrit && !(t.length === 10 && okStamp(m.inscrit))) await fb.db.doc("members/" + m.id).update({inscrit: t});
+    }
   } catch(e){ console.warn(e); /* règles pas encore republiées : on réessaiera à la prochaine ouverture */ }
 }
 function fbListen(){
