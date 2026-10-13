@@ -248,17 +248,17 @@ nav.tabs .ic{display:grid;place-items:center;width:52px;height:30px;border-radiu
 .auth .hero p{margin:0;opacity:.9}
 /* Accueil : phrases qui changent doucement et vagues de mer en bas du cadre (rappel des Comores). */
 .hero.welcome{padding-bottom:58px}
-.motto{position:relative;height:1.5em;font-weight:700;color:var(--gold-bright)}
-.motto span{position:absolute;inset:0;opacity:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;animation:motto 15s infinite}
+.motto{position:relative;height:2.7em;line-height:1.35;font-weight:700;color:var(--gold-bright)}
+.motto span{position:absolute;inset:0;opacity:0;animation:motto 15s infinite}
 .motto span:nth-child(2){animation-delay:5s} .motto span:nth-child(3){animation-delay:10s}
 @keyframes motto{0%{opacity:0;transform:translateY(6px)}4%,30%{opacity:1;transform:none}34%,100%{opacity:0;transform:translateY(-6px)}}
 .waves{position:absolute;left:0;right:0;bottom:0;height:52px;overflow:hidden;pointer-events:none}
 .hero > .waves{position:absolute}
 .waves svg{position:absolute;bottom:0;left:0;width:200%;height:100%;animation:wave 9s linear infinite}
 .waves svg:nth-child(1){height:100%;opacity:.18;animation-duration:14s;animation-direction:reverse}
-.waves svg:nth-child(2){height:78%;opacity:.35;animation-duration:10s;left:-30px}
+.waves svg:nth-child(2){height:78%;opacity:.35;animation-duration:10s;animation-delay:-4s}
 .waves svg:nth-child(2) path{fill:#7FE0D2}
-.waves svg:nth-child(3){height:50%;opacity:.5;animation-duration:7s;left:-60px}
+.waves svg:nth-child(3){height:50%;opacity:.5;animation-duration:7s;animation-delay:-2s}
 .waves svg:nth-child(3) path{fill:#BDEFE7}
 .waves path{fill:#fff}
 @keyframes wave{from{transform:translateX(0)}to{transform:translateX(-50%)}}
