@@ -169,6 +169,15 @@ img.avatar{object-fit:cover;background:var(--surface-2)}
 .switcher{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px}
 .switcher .icon-btn{border:0;background:transparent}
 .switcher strong{font-family:var(--font-display);font-size:1.1rem}
+.switcher .pick{border:0;background:transparent;color:var(--ink);display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;min-height:44px}
+.switcher .pick svg{width:18px;height:18px;color:var(--muted)}
+.months{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.months button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px 4px;min-height:58px;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:700}
+.months button small{font-weight:600;font-size:.75rem;color:var(--muted)}
+.months button.now{border-color:var(--gold-bright)}
+.months button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.months button.on small{color:var(--bg);opacity:.8}
+.months button:disabled{opacity:.3}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border-radius:12px;padding:4px;gap:4px}
 .seg.three{grid-template-columns:1fr 1fr 1fr}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -372,6 +381,7 @@ const ICONS = {
   wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5 5 16a8.5 8.5 0 1 1 3.2 3.2z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/></svg>',
   search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
   right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
@@ -1204,7 +1214,7 @@ function renderCotisations(){
   return `<div class="topbar"><div class="titles"><span class="eyebrow">Igna Djongo</span><h1>Cotisations</h1></div><span class="muted num" style="text-align:right">${esc(money(state.settings.mensuelle,"EUR"))} ou ${esc(money(state.settings.mensuelleKMF,"KMF"))}<br>par mois</span></div>
   <div class="stack">
     <div class="switcher"><button class="icon-btn" type="button" data-action="month" data-d="-1" aria-label="Mois précédent">${ICONS.left}</button>
-      <strong>${esc(monthLabel(mk))}</strong>
+      <button class="pick" type="button" data-action="pick-month" aria-label="Choisir un mois">${ICONS.cal}<strong>${esc(monthLabel(mk))}</strong></button>
       <button class="icon-btn" type="button" data-action="month" data-d="1" aria-label="Mois suivant" ${mk >= curMonth ? "disabled style=\"opacity:.3\"" : ""}>${ICONS.right}</button></div>
     <div class="stats">
       <div class="stat"><span class="muted">À jour</span><b class="num">${ok} / ${state.members.length}</b></div>
@@ -1218,6 +1228,24 @@ function renderCotisations(){
     ${(canPay() || isAdmin()) && mk === curMonth && ui.cotView === "membres" && ok < state.members.length ? `<button class="btn wa" type="button" data-action="relance">${ICONS.wa}Relancer les retards sur WhatsApp</button>` : ""}
     ${body}
   </div>`;
+}
+/* Calendrier des mois : on touche le mois en haut des Cotisations pour sauter directement à n'importe quel mois. */
+const firstYear = () => Math.min(now.getFullYear() - 1, ...state.payments.map(p => Number(String(p.date).slice(0,4))).filter(y => y > 1900));
+function monthPickerSheet(year){
+  const y = Math.max(firstYear(), Math.min(now.getFullYear(), Number(year) || Number(ui.month.slice(0,4))));
+  const cells = Array.from({length:12}, (_, i) => {
+    const mk = `${y}-${pad(i+1)}`, futur = mk > curMonth;
+    const up = futur ? 0 : state.members.filter(m => isUpToDate(m.id, mk)).length;
+    return `<button type="button" class="${mk === ui.month ? "on" : ""} ${mk === curMonth ? "now" : ""}" data-action="goto-month" data-m="${esc(mk)}" ${futur ? "disabled" : ""}>
+      ${esc(monthShort(mk).charAt(0).toUpperCase() + monthShort(mk).slice(1))}<small>${up ? `${up} à jour` : "&nbsp;"}</small></button>`;
+  }).join("");
+  openSheet("Aller à un mois", `<div class="stack">
+    <div class="switcher"><button class="icon-btn" type="button" data-action="pick-year" data-y="${y-1}" aria-label="Année précédente" ${y <= firstYear() ? "disabled style=\"opacity:.3\"" : ""}>${ICONS.left}</button>
+      <strong class="num">${y}</strong>
+      <button class="icon-btn" type="button" data-action="pick-year" data-y="${y+1}" aria-label="Année suivante" ${y >= now.getFullYear() ? "disabled style=\"opacity:.3\"" : ""}>${ICONS.right}</button></div>
+    <div class="months">${cells}</div>
+    ${ui.month !== curMonth ? `<button class="btn ghost" type="button" data-action="goto-month" data-m="${esc(curMonth)}">Revenir à ${esc(monthLabel(curMonth).toLowerCase())}</button>` : ""}
+  </div>`);
 }
 function renderRenew(){
   return `<div class="auth">
@@ -1651,6 +1679,9 @@ const actions = {
   lieu(d){ ui.lieu = d.v; render(); },
   vue(d){ ui.vue = d.v === "mosaique" ? "mosaique" : "liste"; try { localStorage.setItem("igna-djongo-vue", ui.vue); } catch(e){} render(); },
   month(d){ const n = shiftMonth(ui.month, Number(d.d)); if (n <= curMonth){ ui.month = n; render(); } },
+  "pick-month"(){ monthPickerSheet(); },
+  "pick-year"(d){ monthPickerSheet(d.y); },
+  "goto-month"(d){ if (/^\d{4}-\d{2}$/.test(d.m) && d.m <= curMonth){ ui.month = d.m; closeSheet(); render(); } },
   cotview(d){ ui.cotView = d.v; render(); },
   "ask-delete"(){ const c = document.getElementById("confirm-del"); if (c){ c.hidden = false; c.scrollIntoView({block:"nearest"}); } },
   "cancel-delete"(){ const c = document.getElementById("confirm-del"); if (c) c.hidden = true; },
