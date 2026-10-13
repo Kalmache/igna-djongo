@@ -568,7 +568,7 @@ const paidMonth = (id, mk) => { const m = memberById(id); const dev = devOfMembe
   return state.payments.filter(p => p.memberId === id && p.cat === "mensuelle" && p.date.startsWith(mk)).reduce((s,p) => s + convert(p.montant, devOfPay(p), dev), 0); };
 const isUpToDate = (id, mk) => paidMonth(id, mk) >= expectedOf(memberById(id)) - 0.01;
 const monthIn = mk => state.payments.filter(p => !isOut(p) && p.date.startsWith(mk)).reduce((s,p) => s + toEur(p.montant, devOfPay(p)), 0);
-const sortedPayments = () => [...state.payments].sort((a,b) => b.date.localeCompare(a.date) || 0);
+const sortedPayments = () => [...state.payments].sort((a,b) => b.date.localeCompare(a.date) || payAt(b).localeCompare(payAt(a)));
 
 
 /* ---------- stockage : démo sur le téléphone, ou base en ligne Firebase ---------- */
@@ -695,7 +695,7 @@ const store = {
   dropDecl(id){ if (!ONLINE){ state.declarations = state.declarations.filter(x => x.id !== id); save(); return; } fb.db.doc("declarations/" + id).delete().catch(fail); },
   confirmDecl(dc){
     const c = dc.collecte ? collecteById(dc.collecte) : null;
-    const p = {id:uid("p"), memberId:dc.memberId, montant:dc.montant, devise:dc.devise, date:dc.date, cat:dc.cat, motif:dc.note || (c ? c.titre : CATS[dc.cat]), moyen:dc.moyen, par:myUid(), declarePar:dc.uid, ...(c ? {collecte:c.id} : {})};
+    const p = {id:uid("p"), memberId:dc.memberId, montant:dc.montant, devise:dc.devise, date:dc.date, cat:dc.cat, motif:dc.note || (c ? c.titre : CATS[dc.cat]), moyen:dc.moyen, par:myUid(), at:nowStamp(), declarePar:dc.uid, ...(c ? {collecte:c.id} : {})};
     if (!ONLINE){ state.payments.push(p); state.declarations = state.declarations.filter(x => x.id !== dc.id); save(); return; }
     const b = fb.db.batch(); b.set(fb.db.doc("ledger/" + p.date.slice(0,7)), {items: FV().arrayUnion(p)}, {merge:true}); b.delete(fb.db.doc("declarations/" + dc.id)); b.commit().catch(fail); },
   setPhoto(id, photo){ const m = memberById(id); if (!m) return;
@@ -900,12 +900,19 @@ function submitDeclare(form){
   store.declare({memberId:m.id, uid:myUid(), montant, devise: f.get("devise") === "KMF" ? "KMF" : "EUR", date, cat, moyen, note:String(f.get("note") || "").trim().slice(0,200), at:todayISO, ...(pc.collecte ? {collecte:pc.collecte} : {})});
   closeSheet(); render(); toast("Merci ! Le trésorier va confirmer ton paiement.");
 }
+/* Heure d'enregistrement d'un mouvement (champ « at ») et qui l'a enregistré (« par »).
+   Les anciens mouvements n'ont pas d'heure : on n'affiche alors rien de plus que la date. */
+const payAt = p => okStamp(p.at) && p.at.length > 10 ? p.at : "";
+const payHour = p => { const t = stampTime(payAt(p)); if (!t) return ""; const d = new Date(t);
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` === p.date ? `${pad(d.getHours())} h ${pad(d.getMinutes())}` : ""; };
+const memberOfUid = u => typeof u === "string" && u ? state.members.find(m => m.uid === u) || (!ONLINE ? memberById(u) : null) || null : null;
 function movementItem(p, pick){
   const sel = pick instanceof Set ? pick : null; // .map(movementItem) passe l'index en 2e argument
   const m = p.memberId ? memberById(p.memberId) : null;
   const who = m ? m.nom : (isOut(p) ? "Caisse de l'igna" : "Anonyme");
   const title = isOut(p) ? p.motif : who;
-  const sub = isOut(p) ? `${CATS.sortie} · ${dateLabel(p.date)}` : `${esc(p.motif || CATS[p.cat])} · ${esc(dateLabel(p.date))}`;
+  const h = payHour(p), hh = h ? ` · ${h}` : "";
+  const sub = isOut(p) ? `${CATS.sortie} · ${dateLabel(p.date)}${hh}` : `${esc(p.motif || CATS[p.cat])} · ${esc(dateLabel(p.date))}${esc(hh)}`;
   const on = sel && sel.has(p.id);
   return `<button class="item${on ? " picked" : ""}" type="button" data-action="${sel ? "mv-toggle" : "movement"}" data-id="${esc(p.id)}"${sel ? ` aria-pressed="${on}"` : ""}>
     ${sel ? `<span class="tick" aria-hidden="true">${on ? ICONS.check : ""}</span>` : ""}<span class="mv-icon ${isOut(p)?"out":"in"}">${isOut(p)?ICONS.up:ICONS.down}</span>
@@ -1547,9 +1554,9 @@ function submitPay(form){
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail("Choisis une date.");
   if (kind === "out" && !motif) return fail("Pour une sortie, écris à quoi l'argent a servi.");
   const devise = f.get("devise") === "KMF" ? "KMF" : "EUR";
-  const p = kind === "out" ? {id:uid("p"), memberId:null, montant, devise, date, cat:"sortie", motif, par:myUid()}
+  const p = kind === "out" ? {id:uid("p"), memberId:null, montant, devise, date, cat:"sortie", motif, par:myUid(), at:nowStamp()}
     : (() => { const pc = parseCat(f.get("cat")), c = pc.collecte ? collecteById(pc.collecte) : null;
-        return {id:uid("p"), memberId:String(f.get("member")), montant, devise, date, cat:pc.cat, motif: motif || (c ? c.titre : CATS[pc.cat]), par:myUid(), ...(c ? {collecte:c.id} : {})}; })();
+        return {id:uid("p"), memberId:String(f.get("member")), montant, devise, date, cat:pc.cat, motif: motif || (c ? c.titre : CATS[pc.cat]), par:myUid(), at:nowStamp(), ...(c ? {collecte:c.id} : {})}; })();
   store.addPayment(p); closeSheet(); render();
   toast(kind === "out" ? "Sortie enregistrée" : `Paiement de ${memberById(p.memberId).nom.split(" ")[0]} enregistré`);
 }
@@ -1633,6 +1640,9 @@ function movementSheet(id){
       ${m ? `<span><b>${esc(m.nom)}</b> · ${esc(m.famille)}</span>` : ""}
       <span>${esc(p.motif || CATS[p.cat])}</span>
       <span class="muted">${esc(CATS[p.cat])} · ${esc(dateLabel(p.date))} ${esc(yearOf(p.date))}</span>
+      ${(() => { const by = memberOfUid(p.par), at = payAt(p), dc = memberOfUid(p.declarePar);
+        const rec = at || by ? `<span class="muted">Enregistré${at ? " le " + esc(stampLabel(at)) : ""}${by ? " par " + esc(by.nom) : ""}</span>` : "";
+        return rec + (dc ? `<span class="muted">Déclaré par ${esc(dc.nom)} (« J'ai cotisé »)</span>` : ""); })()}
     </div>
     ${canPay() ? `<button class="btn danger" type="button" data-action="ask-delete">Supprimer ce mouvement</button>` : ""}
     <div class="confirm" id="confirm-del" hidden><span>Supprimer ce mouvement ? Le total de la caisse sera recalculé.</span>
