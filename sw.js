@@ -1,4 +1,4 @@
-const CACHE = "igna-djongo-v2";
+const CACHE = "igna-djongo-v3";
 const SHELL = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, {cache: "reload"})))).then(() => self.skipWaiting()));
