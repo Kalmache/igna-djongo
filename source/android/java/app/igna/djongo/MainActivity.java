@@ -26,8 +26,8 @@ import android.widget.Toast;
  * mise à jour du site arrive sans réinstaller. Conçue par M.M.B.T · 2026.
  */
 public class MainActivity extends Activity {
-    static final String HOST = "kalmache.github.io";
-    static final String HOME = "https://kalmache.github.io/igna-djongo/";
+    static final String HOST = "igna.mmbt.fr";
+    static final String HOME = "https://igna.mmbt.fr/";
     static final int PICK_FILE = 1;
 
     WebView web;
@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setMediaPlaybackRequiresUserGesture(true);
         s.setSupportMultipleWindows(false);
-        s.setUserAgentString(s.getUserAgentString() + " IgnaDjongoApp/1.1");
+        s.setUserAgentString(s.getUserAgentString() + " IgnaDjongoApp/1.2");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
 
@@ -71,7 +71,10 @@ public class MainActivity extends Activity {
     }
 
     static boolean inside(Uri u) {
-        return "https".equals(u.getScheme()) && HOST.equals(u.getHost())
+        if (!"https".equals(u.getScheme())) return false;
+        if (HOST.equals(u.getHost())) return true;
+        // Ancienne adresse : elle renvoie vers igna.mmbt.fr, on la laisse suivre dans l'appli.
+        return "kalmache.github.io".equals(u.getHost())
                 && u.getPath() != null && u.getPath().startsWith("/igna-djongo");
     }
 
