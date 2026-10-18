@@ -1,0 +1,14 @@
+# Igna Djongo sur igna.mmbt.fr (M.M.B.T, 2026)
+RewriteEngine On
+RewriteCond %{SERVER_PORT} ^80$
+RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Strict-Transport-Security "max-age=31536000"
+</IfModule>
+Options -Indexes
+AddType application/vnd.android.package-archive .apk
+AddType application/manifest+json .webmanifest

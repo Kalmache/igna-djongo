@@ -17,3 +17,9 @@ L'APK est une petite coquille qui affiche le site en ligne : les mises à jour d
 arrivent sans réinstaller. Source dans `source/android/`, construction avec
 `source/android/build-apk.sh` (outils pris sur Maven Central). La clé de signature
 n'est pas dans ce dépôt : elle reste dans les fichiers privés du projet.
+
+## Hébergement
+
+Depuis octobre 2026, l'appli est hébergée sur l'hébergement OVH de mmbt.fr (multisite `igna.mmbt.fr`,
+dossier `igna`). Chaque changement sur `main` est envoyé automatiquement par
+`.github/workflows/mise-en-ligne.yml` (secrets `FTP_UTILISATEUR` et `FTP_MOT_DE_PASSE`).
