@@ -678,7 +678,7 @@ const withStamps = (write, d, stamps) => write({...d, ...stamps}).catch(e => { i
 const store = {
   addMember(d){ const t = nowStamp(); if (!ONLINE){ state.members.push({id:uid("m"), ...d, inscrit:t, modifie:t}); save(); return; }
     withStamps(x => fb.db.collection("members").add(x), d, {inscrit:t, modifie:t}).catch(fail); },
-  declare(d){ if (!ONLINE){ state.declarations.push({id:uid("d"), ...d}); save(); return; } fb.db.collection("declarations").add(d).catch(fail); },
+  declare(d){ if (!ONLINE){ state.declarations.push({id:uid("d"), ...d}); save(); return; } fb.db.collection("declarations").add(d).then(() => prevenirTresorier(d)).catch(fail); },
   dropDecl(id){ if (!ONLINE){ state.declarations = state.declarations.filter(x => x.id !== id); save(); return; } fb.db.doc("declarations/" + id).delete().catch(fail); },
   confirmDecl(dc){
     const c = dc.collecte ? collecteById(dc.collecte) : null;
@@ -847,6 +847,14 @@ const collectesOuvertes = () => state.collectes.filter(c => c.ouverte).sort((a,b
 const catOptions = sel => `<option value="mensuelle">${CATS.mensuelle}</option>${collectesOuvertes().map(c => `<option value="c:${esc(c.id)}" ${sel === c.id ? "selected" : ""}>Collecte : ${esc(c.titre)}</option>`).join("")}<option value="evenement">Événement (mariage, décès…)</option><option value="don">${CATS.don}</option>`;
 const parseCat = v => { v = String(v || ""); if (v.startsWith("c:") && collecteById(v.slice(2))) return {cat:"evenement", collecte:v.slice(2)}; return {cat: ["mensuelle","evenement","don"].includes(v) ? v : "mensuelle"}; };
 const MOYENS = ["Virement bancaire", "Espèces remises en main propre", "Mobile money (Mvola, Huri…)", "Autre"];
+/* Notification sur le téléphone de Maabadi (robot Telegram de mmbt.fr) : un paiement attend d'être confirmé. */
+function prevenirTresorier(d){
+  try {
+    const m = memberById(d.memberId), b = new FormData();
+    b.append("nom", m ? m.nom : ""); b.append("montant", String(d.montant)); b.append("devise", d.devise); b.append("quoi", d.collecte ? "collecte" : "cotisation");
+    fetch("https://mmbt.fr/notif-igna.php", {method:"POST", body:b, mode:"no-cors"}).catch(() => {});
+  } catch (x) {}
+}
 const pendingFor = (memberId, mk) => state.declarations.filter(d => d.memberId === memberId && (!mk || d.date.startsWith(mk)));
 const canDeclare = () => !!me() && !canPay();
 function declItem(dc){
