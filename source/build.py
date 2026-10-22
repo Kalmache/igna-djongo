@@ -59,7 +59,7 @@ icon(180, rounded=False).convert("RGB").save(HERE / "apple-touch-icon.png")
 
 # Petit service worker : permet l'installation comme une vraie appli et garde
 # une copie de la page pour l'ouvrir même avec une connexion faible.
-(HERE / "sw.js").write_text("""const CACHE = "igna-djongo-v2";
+(HERE / "sw.js").write_text("""const CACHE = "igna-djongo-v4";
 const SHELL = ["./", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, {cache: "reload"})))).then(() => self.skipWaiting()));
@@ -79,6 +79,17 @@ self.addEventListener("fetch", e => {
     caches.open(CACHE).then(c => c.put(req, copy));
     return res;
   }).catch(() => caches.match(req).then(r => r || caches.match("./"))));
+});
+
+// Notifications envoyées par mmbt.fr (annonce, collecte, paiement confirmé).
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = {texte: e.data ? e.data.text() : ""}; }
+  e.waitUntil(self.registration.showNotification(d.titre || "Igna Djongo", {body: d.texte || "", icon: "icon-192.png", badge: "icon-192.png", data: {url: d.url || "./"}}));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({type: "window", includeUncontrolled: true}).then(l => l.length ? l[0].focus() : self.clients.openWindow((e.notification.data && e.notification.data.url) || "./")));
 });
 """)
 

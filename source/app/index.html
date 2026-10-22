@@ -655,6 +655,7 @@ async function fillInscrit(){
   } catch(e){ console.warn(e); /* règles pas encore republiées : on réessaiera à la prochaine ouverture */ }
 }
 function fbListen(){
+  pushVerifier();
   const done = k => { fb.loaded[k] = true; if (fb.status === "loading" && ["members","ledger","roles"].every(x => fb.loaded[x])) fb.status = "in"; if (fb.status === "in"){ liveRender(); fillInscrit(); } };
   const onErr = e => { console.error(e); if (e && e.code === "permission-denied"){ fbStop(); fb.status = "noaccess"; render(); } };
   const L = (ref, fn, k) => fb.unsub.push(ref.onSnapshot(snap => { fn(snap); done(k); }, onErr));
@@ -684,7 +685,7 @@ const store = {
     const c = dc.collecte ? collecteById(dc.collecte) : null;
     const p = {id:uid("p"), memberId:dc.memberId, montant:dc.montant, devise:dc.devise, date:dc.date, cat:dc.cat, motif:dc.note || (c ? c.titre : CATS[dc.cat]), moyen:dc.moyen, par:myUid(), at:nowStamp(), declarePar:dc.uid, ...(c ? {collecte:c.id} : {})};
     if (!ONLINE){ state.payments.push(p); state.declarations = state.declarations.filter(x => x.id !== dc.id); save(); return; }
-    const b = fb.db.batch(); b.set(fb.db.doc("ledger/" + p.date.slice(0,7)), {items: FV().arrayUnion(p)}, {merge:true}); b.delete(fb.db.doc("declarations/" + dc.id)); b.commit().catch(fail); },
+    const b = fb.db.batch(); b.set(fb.db.doc("ledger/" + p.date.slice(0,7)), {items: FV().arrayUnion(p)}, {merge:true}); b.delete(fb.db.doc("declarations/" + dc.id)); b.commit().then(() => pushIgna("confirme", {mois:p.date.slice(0,7), pid:p.id})).catch(fail); },
   setPhoto(id, photo){ const m = memberById(id); if (!m) return;
     if (!ONLINE){ if (photo) m.photo = photo; else delete m.photo; m.modifie = nowStamp(); save(); return; }
     if (photo) m.photo = photo; else delete m.photo;
@@ -707,9 +708,9 @@ const store = {
     const byMonth = {}; list.forEach(p => (byMonth[p.date.slice(0,7)] = byMonth[p.date.slice(0,7)] || []).push(p));
     const b = fb.db.batch(); Object.entries(byMonth).forEach(([mk, items]) => b.update(fb.db.doc("ledger/" + mk), {items: FV().arrayRemove(...items)}));
     b.commit().catch(fail); },
-  addCollecte(c){ if (!ONLINE){ state.collectes.push({id:uid("c"), ...c}); save(); return; } fb.db.collection("collectes").add(c).catch(fail); },
+  addCollecte(c){ if (!ONLINE){ state.collectes.push({id:uid("c"), ...c}); save(); return; } fb.db.collection("collectes").add(c).then(ref => pushIgna("collecte", {id:ref.id})).catch(fail); },
   updateCollecte(id, d){ if (!ONLINE){ Object.assign(state.collectes.find(x => x.id === id), d); save(); return; } fb.db.doc("collectes/" + id).update(d).catch(fail); },
-  addAnnonce(a){ if (!ONLINE){ state.annonces.push({id:uid("a"), ...a}); save(); return; } fb.db.collection("annonces").add(a).catch(fail); },
+  addAnnonce(a){ if (!ONLINE){ state.annonces.push({id:uid("a"), ...a}); save(); return; } fb.db.collection("annonces").add(a).then(ref => pushIgna("annonce", {id:ref.id})).catch(fail); },
   updateAnnonce(id, d){ if (!ONLINE){ Object.assign(state.annonces.find(x => x.id === id), d); save(); return; } fb.db.doc("annonces/" + id).update(d).catch(fail); },
   deleteAnnonce(id){ if (!ONLINE){ state.annonces = state.annonces.filter(x => x.id !== id); save(); return; } fb.db.doc("annonces/" + id).delete().catch(fail); },
   addChapter(c){ if (!ONLINE){ state.histoire.push({id:uid("h"), ...c}); save(); return; } fb.db.collection("histoire").add(c).catch(fail); },
@@ -855,6 +856,38 @@ function prevenirTresorier(d){
     fetch("https://mmbt.fr/notif-igna.php", {method:"POST", body:b, mode:"no-cors"}).catch(() => {});
   } catch (x) {}
 }
+/* Notifications sur les téléphones des membres (annonces, collectes, paiement confirmé), envoyées par mmbt.fr. */
+const PUSH_URL = "https://mmbt.fr/push-igna.php";
+const pushPossible = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && !/IgnaDjongoApp/.test(navigator.userAgent);
+let pushActif = null; // null : pas encore vérifié
+function pushVerifier(){
+  if (!pushPossible()) { pushActif = true; return; } // rien à proposer
+  navigator.serviceWorker.ready.then(r => r.pushManager.getSubscription()).then(a => {
+    const avant = pushActif; pushActif = !!a && Notification.permission === "granted"; if (avant !== pushActif) render();
+  }).catch(() => {});
+}
+async function pushIgna(action, donnees){
+  try {
+    if (!ONLINE || !fb.auth || !fb.auth.currentUser) return null;
+    const b = new FormData(); b.append("action", action); b.append("jeton", await fb.auth.currentUser.getIdToken());
+    Object.entries(donnees).forEach(([k, v]) => b.append(k, typeof v === "string" ? v : JSON.stringify(v)));
+    return await fetch(PUSH_URL, {method:"POST", body:b});
+  } catch (x) { return null; }
+}
+async function pushActiver(){
+  const iphone = /iPhone|iPad|iPod/.test(navigator.userAgent), installee = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (iphone && !installee) return alert("Sur iPhone : ajoute d'abord l'appli à l'écran d'accueil (bouton Partager, puis « Sur l'écran d'accueil »), ouvre-la depuis l'icône, puis touche de nouveau ce bouton.");
+  if (await Notification.requestPermission() !== "granted") return alert("Les notifications sont refusées. Autorise-les dans les réglages du téléphone, puis réessaie.");
+  try {
+    const cle = (await (await fetch(PUSH_URL)).json()).cle;
+    const o = (cle + "=".repeat((4 - cle.length % 4) % 4)).replace(/-/g, "+").replace(/_/g, "/");
+    const reg = await navigator.serviceWorker.ready;
+    const abo = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:Uint8Array.from(atob(o), c => c.charCodeAt(0))});
+    const r = await pushIgna("abonner", {abonnement:abo.toJSON()});
+    if (!r || !r.ok) throw new Error("serveur");
+    pushActif = true; render(); toast("Notifications activées");
+  } catch (x) { alert("Ça n'a pas marché. Vérifie la connexion et réessaie."); }
+}
 const pendingFor = (memberId, mk) => state.declarations.filter(d => d.memberId === memberId && (!mk || d.date.startsWith(mk)));
 const canDeclare = () => !!me() && !canPay();
 function declItem(dc){
@@ -945,6 +978,7 @@ function renderAccueil(){
   <div class="stack">
     ${canPay() && state.declarations.length ? `<button class="notice" type="button" data-action="goto-decl" style="border:0;text-align:left;color:var(--ink);background:var(--gold-soft)">${ICONS.info}<span><b>${state.declarations.length} paiement${state.declarations.length > 1 ? "s" : ""} à confirmer.</b> Touche ici pour les voir.</span></button>` : ""}
     ${canDeclare() ? `<button class="btn primary" type="button" data-action="declare">${ICONS.plus}J'ai cotisé</button>` : ""}
+    ${ONLINE && pushActif === false ? `<button class="btn ghost" type="button" data-action="push-on">🔔 Activer les notifications</button>` : ""}
     ${annoncesCollectesSection()}
     <section class="hero tap calm" role="button" tabindex="0" data-action="caisse" aria-label="Total de la caisse, toucher pour voir le détail">
       <span class="label">Total en caisse</span>
@@ -1724,6 +1758,7 @@ const actions = {
   movement(d){ closeSheet(); movementSheet(d.id); },
   "add-member"(){ memberFormSheet(null); },
   declare(){ closeSheet(); declareSheet(); },
+  "push-on"(){ pushActiver(); },
   "goto-decl"(){ ui.tab = "cotisations"; ui.cotView = "membres"; render(); scrollTo(0,0); },
   "decl-ok"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc || !canPay()) return; store.confirmDecl(dc); render(); const m = memberById(dc.memberId); toast(`Paiement${m ? " de " + m.nom.split(" ")[0] : ""} confirmé`); },
   "decl-no"(d){ const dc = state.declarations.find(x => x.id === d.id); if (!dc) return; if (!confirm(canPay() ? "Refuser ce paiement ? Il sera retiré de la liste." : "Annuler ce paiement déclaré ?")) return; store.dropDecl(dc.id); render(); toast(canPay() ? "Paiement refusé" : "Déclaration annulée"); },
